@@ -1,7 +1,8 @@
 import os
-from typing import List
+from typing import Dict, List
 
 import pandas as pd
+from pydantic import BaseModel
 from notion_client import Client
 
 
@@ -37,23 +38,29 @@ def get_all_pages(client: Client) -> pd.DataFrame:
     return results
 
 
-def get_blocks(client: Client, page_id: str) -> pd.DataFrame:
+class Document(BaseModel):
+    document_url: str
+    source_url: str
+    content: str
+
+
+def get_blocks(client: Client, page_id: str, url: str) -> List[Document]:
     all_blocks = client.blocks.children.list(page_id, page_size=100)['results']
 
     all_blocks = pd.DataFrame(all_blocks)
 
     if all_blocks.empty:
-        return pd.DataFrame()
+        return []
 
     all_blocks = all_blocks[all_blocks['type'] == 'paragraph']
 
     if all_blocks.empty:
-        return pd.DataFrame()
+        return []
 
     all_blocks = all_blocks[all_blocks['paragraph'].apply(lambda x: bool(x['rich_text']))]
 
     if all_blocks.empty:
-        return pd.DataFrame()
+        return []
 
     all_blocks = all_blocks[['id', 'paragraph']]
     all_blocks['paragraph'] = all_blocks['paragraph'].apply(lambda x: x['rich_text'])
@@ -61,20 +68,29 @@ def get_blocks(client: Client, page_id: str) -> pd.DataFrame:
         lambda x: ' '.join([y['text']['content'] for y in x if 'text' in y.keys()])
     )
 
-    return all_blocks
+    # print(all_blocks)
+    # print(all_blocks.columns)
+
+    documents = [
+        Document(document_url=url, source_url=url, content=row['paragraph'])
+        for _, row in all_blocks.iterrows()
+    ]
+
+    return documents
 
 
-def get_all_blocks(client: Client, limit) -> List[str]:
+def get_all_blocks(client: Client, limit) -> List[Document]:
     pages = get_all_pages(client)
 
     print(f'got {len(pages)} pages')
 
     paragraphs = []
 
-    for page_id in pages['id']:
-        _blocks = get_blocks(client, page_id)
-        if not _blocks.empty:
-            paragraphs += _blocks['paragraph'].tolist()
+    for page_id, url in zip(pages['id'], pages['url']):
+        _blocks = get_blocks(client, page_id, url)
+
+        if _blocks:
+            paragraphs += _blocks
 
         if len(paragraphs) > limit:
             break
@@ -92,4 +108,6 @@ if __name__ == "__main__":
     blocks = get_all_blocks(notion_client, limit=50)
 
     print(len(blocks))
+    for block in blocks[:10]:
+        print(block.dict())
     # print(notion_client.pages.retrieve())
