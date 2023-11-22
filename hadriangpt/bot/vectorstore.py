@@ -1,6 +1,7 @@
 import faiss
 from langchain.docstore import InMemoryDocstore
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 
 
@@ -11,10 +12,10 @@ class VectorDB:
         embedding_size = 1536
         index = faiss.IndexFlatL2(embedding_size)
         self._vectorstore = FAISS(embeddings_model.embed_query, index, InMemoryDocstore({}), {})
-        self._max_tokens_per_doc = 500
+        self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=max_tokens_per_docs, chunk_overlap=50)
 
     def add_docs(self, docs):
-        # todo: split
+        self._text_splitter.split_documents(docs)
         sources = list(set([doc.metadata['source'] for doc in docs]))
         for source in sources:
             self.delete_by_source(source)

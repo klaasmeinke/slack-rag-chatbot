@@ -1,6 +1,7 @@
-from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQAWithSourcesChain
+from langchain.chat_models import ChatOpenAI
 from langchain.docstore.document import Document
+
 from hadriangpt.bot.vectorstore import VectorDB
 
 
