@@ -16,13 +16,20 @@ class Bot:
     def run(self, question: str):
         return self.chain({"question": question})
 
-    def add_docs(self, docs):
+    def add_docs(self, docs: list[dict]):
+        docs = [Document(
+            page_content=doc['content'],
+            metadata={
+                'source': doc['source_url'],
+                'page_url': doc['page_url']
+            }
+        ) for doc in docs]
         self._vectorstore.add_docs(docs)
 
 
 if __name__ == "__main__":
     bot = Bot()
-    bot.add_docs([Document(page_content="The meaning of life is 42", metadata={"source": "42-c"})])
+    bot.add_docs([{'content': "The meaning of life is 42", "page_url": "42-c", "source_url": "42-c-3"}])
     print(bot.run("What is the meaning of life?"))
-    bot.add_docs([Document(page_content="The meaning of life is 69", metadata={"source": "42-c"})])
+    bot.add_docs([{'content': "The meaning of life is 69", "page_url": "42-c", "source_url": "42-c-4"}])
     print(bot.run("What is the meaning of life?"))

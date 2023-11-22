@@ -16,17 +16,17 @@ class VectorDB:
 
     def add_docs(self, docs):
         self._text_splitter.split_documents(docs)
-        sources = list(set([doc.metadata['source'] for doc in docs]))
-        for source in sources:
-            self.delete_by_source(source)
+        page_urls = list(set([doc.metadata['page_url'] for doc in docs]))
+        for page in page_urls:
+            self._delete_by_page_url(page)
         self._vectorstore.add_documents(docs)
 
-    def delete_by_source(self, source):
+    def _delete_by_page_url(self, page):
         # look up docs by source
         d = self._vectorstore.docstore._dict
         to_delete = []
         for key in d:
-            if d[key].metadata['source'] == source:
+            if d[key].metadata['page_url'] == page:
                 to_delete.append(key)
 
         if not to_delete:
