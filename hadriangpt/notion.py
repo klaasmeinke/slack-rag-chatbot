@@ -1,15 +1,22 @@
+from datetime import datetime
 import os
-from typing import Dict, List
-
-import pandas as pd
-from pydantic import BaseModel
 from notion_client import Client
+from typing import List, Optional
+from pydantic import BaseModel
 
 
-def get_all_pages(client: Client) -> pd.DataFrame:
+class Page(BaseModel):
+    title: Optional[str]
+    url: str
+    last_edited: Optional[datetime]
+    content: Optional[str] = None
+
+
+def get_all_pages(client: Client) -> List[Page]:
+    """returns pages without content"""
     has_more = True
     i = 0
-    results = []
+    pages = []
     start_cursor = None
 
     while has_more:
@@ -25,89 +32,56 @@ def get_all_pages(client: Client) -> pd.DataFrame:
         start_cursor = response['next_cursor']
         has_more = response['has_more']
 
-        filtered_results = [
-            {k: v for k, v in page.items() if k in ['id', 'url', 'last_edited_time', 'archived']}
-            for page in response['results']
+        new_pages = [
+            Page(
+                title=page['properties']['title']['title'][0]['text']['content'] if 'title' in page['properties'] else None,
+                url=page['url'],
+                last_edited=datetime.strptime(page['last_edited_time'], "%Y-%m-%dT%H:%M:%S.%fZ"),
+            )
+            for page in response['results'] if not page['archived']
         ]
 
-        results += filtered_results
+        pages += new_pages
 
-    results = pd.DataFrame(results)
-    results = results[~results['archived']]  # remove archived pages
-
-    return results
+    return pages
 
 
-class Document(BaseModel):
-    document_url: str
-    source_url: str
-    content: str
+def scrape_page(page: Page, client: Client) -> Page:
+    """adds content to a single page"""
+    all_blocks = client.blocks.children.list(page.url[-32:], page_size=100)['results']
 
+    text = '' if page.title is None else 'Page Title: ' + page.title
 
-def get_blocks(client: Client, page_id: str, url: str) -> List[Document]:
-    all_blocks = client.blocks.children.list(page_id, page_size=100)['results']
+    prefixes = {
+        'paragraph': '\n',
+        'heading_3': '\n###',
+        'heading_2': '\n##',
+        'heading_1': '\n#'
+    }
 
-    all_blocks = pd.DataFrame(all_blocks)
+    for block in all_blocks:
 
-    if all_blocks.empty:
-        return []
+        block_type = block['type']
 
-    all_blocks = all_blocks[all_blocks['type'] == 'paragraph']
+        if block_type not in prefixes.keys():
+            continue
 
-    if all_blocks.empty:
-        return []
+        if not block[block_type]['rich_text']:
+            continue
 
-    all_blocks = all_blocks[all_blocks['paragraph'].apply(lambda x: bool(x['rich_text']))]
+        text += prefixes[block_type]
+        text += ''.join([b['text']['content'] for b in block[block_type]['rich_text'] if 'text' in b])
 
-    if all_blocks.empty:
-        return []
-
-    all_blocks = all_blocks[['id', 'paragraph']]
-    all_blocks['paragraph'] = all_blocks['paragraph'].apply(lambda x: x['rich_text'])
-    all_blocks['paragraph'] = all_blocks['paragraph'].apply(
-        lambda x: ' '.join([y['text']['content'] for y in x if 'text' in y.keys()])
-    )
-
-    # print(all_blocks)
-    # print(all_blocks.columns)
-
-    documents = [
-        Document(document_url=url, source_url=url, content=row['paragraph'])
-        for _, row in all_blocks.iterrows()
-    ]
-
-    return documents
-
-
-def get_all_blocks(client: Client, limit) -> List[Document]:
-    pages = get_all_pages(client)
-
-    print(f'got {len(pages)} pages')
-
-    paragraphs = []
-
-    for page_id, url in zip(pages['id'], pages['url']):
-        _blocks = get_blocks(client, page_id, url)
-
-        if _blocks:
-            paragraphs += _blocks
-
-        if len(paragraphs) > limit:
-            break
-
-        print(f'got {len(paragraphs)} paragraphs', end='\r')
-
-    print(f'got {len(paragraphs)} paragraphs')
-
-    return paragraphs
+    page.content = text
+    return page
 
 
 if __name__ == "__main__":
     notion_client = Client(auth=os.getenv("NOTION_API_KEY"))
 
-    blocks = get_all_blocks(notion_client, limit=50)
+    _pages = get_all_pages(notion_client)
 
-    print(len(blocks))
-    for block in blocks[:10]:
-        print(block.dict())
-    # print(notion_client.pages.retrieve())
+    for _page in _pages:
+        print(f'------ {_page.url} --------')
+        _page = scrape_page(_page, notion_client)
+        print(_page.content)

@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 pydantic = "*"
-pandas = "*"
 notion-client = "==2.1.0"
 faiss-cpu = "*"
 langchain = "*"
