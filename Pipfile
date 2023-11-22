@@ -6,6 +6,10 @@ name = "pypi"
 [packages]
 pandas = "*"
 notion-client = "==2.1.0"
+faiss-cpu = "*"
+langchain = "*"
+openai = "*"
+tiktoken = "*"
 
 [dev-packages]
 
