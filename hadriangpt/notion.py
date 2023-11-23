@@ -82,7 +82,7 @@ def get_all_pages(client: Client) -> List[Page]:
         response = client.search(
             query='',
             page_size=100,
-            filter={'value': 'page', 'property': 'object'},
+            # filter={'value': 'page', 'property': 'object'},
             start_cursor=start_cursor
         )
 
@@ -134,13 +134,16 @@ def get_all_pages(client: Client) -> List[Page]:
     id_to_title = {result['id']: get_title(result) for result in results}
 
     id_to_parent_id = {
-        result['id']: result['parent']['page_id'] for result in results
-        if 'parent' in result and result['parent']['type'] == 'page_id'
+        result['id']: result['parent'][result['parent']['type']] for result in results
+        if 'parent' in result
     }
 
     pages: List[Page] = []
 
     for result in results:
+
+        if result['object'] != 'page':
+            continue
 
         # get page title including chain of parents
         title = get_title(result)
@@ -165,15 +168,15 @@ def get_all_pages(client: Client) -> List[Page]:
 def test_notion_scraping():
     notion_client = Client(auth=os.getenv("NOTION_API_KEY"))
     pages = get_all_pages(notion_client)
+    print(f'found {len(pages)} notion pages in total')
+
+    days = 30
+    pages = [p for p in pages if datetime.now() - timedelta(days=days) < p.last_edited]
+    print(f'found {len(pages)} pages that were edited in last {days} days')
 
     for page in pages:
-        if datetime.now() - timedelta(days=3) > page.last_edited:  # not edited in last 3 days
-            continue
-
         page.scrape(notion_client)
-
         print(f'------ {page.url} --------')
-        print(f'last edited: {page.last_edited}')
         print(page.content)
 
 
