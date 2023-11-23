@@ -25,6 +25,7 @@ class Page(BaseModel):
         all_blocks = client.blocks.children.list(block_id, page_size=100)['results']
 
         prefixes = {
+            'child_page': '\nchild page: ',
             'code': '\n```',
             'callout': '\n',
             'paragraph': '\n',
@@ -37,6 +38,7 @@ class Page(BaseModel):
         }
 
         suffixes = {
+            'child_page': '',
             'code': '```',
             'callout': '',
             'paragraph': '',
@@ -53,22 +55,28 @@ class Page(BaseModel):
             block_type = block['type']
             if block_type not in prefixes.keys():
                 continue
-            if not block[block_type]['rich_text']:
+
+            if 'rich_text' in block[block_type] and block[block_type]['rich_text']:
+                block_content = prefixes[block_type]
+                block_content += ''.join([b['text']['content'] for b in block[block_type]['rich_text'] if 'text' in b])
+                block_content += suffixes[block_type]
+                if block_type == 'to_do':
+                    self.content += ' (done)' if block['to_do']['checked'] else ' (to-do)'
+
+            elif 'title' in block[block_type] and block[block_type]['title']:
+                block_content = prefixes[block_type]
+                block_content += block[block_type]['title']
+                block_content += suffixes[block_type]
+
+            else:
                 continue
-
-            block_content = prefixes[block_type]
-            block_content += ''.join([b['text']['content'] for b in block[block_type]['rich_text'] if 'text' in b])
-            block_content += suffixes[block_type]
-
-            if block_type == 'to_do':
-                self.content += ' (done)' if block['to_do']['checked'] else ' (to-do)'
 
             if is_child:
                 block_content = block_content.replace('\n', '\n  ')
 
             self.content += block_content
 
-            if block['has_children']:
+            if block['has_children'] and block_type != 'child_page':
                 self.scrape(client, block_id=block['id'])
 
 
@@ -80,9 +88,8 @@ def get_all_pages(client: Client) -> List[Page]:
 
     while has_more:
         response = client.search(
-            query='',
+            query='AI',
             page_size=100,
-            # filter={'value': 'page', 'property': 'object'},
             start_cursor=start_cursor
         )
 
@@ -91,6 +98,11 @@ def get_all_pages(client: Client) -> List[Page]:
         results += response['results']
 
     def get_title(_result) -> str:
+
+        if _result['object'] == 'database':
+            assert _result['object'] == 'database'
+            return _result['title'][0]['text']['content']
+
         for key in _result['properties']:
             if _result['properties'][key]['id'] == 'title':
                 if _result['properties'][key]['title'] and 'text' in _result['properties'][key]['title'][0]:
@@ -141,7 +153,6 @@ def get_all_pages(client: Client) -> List[Page]:
     pages: List[Page] = []
 
     for result in results:
-
         if result['object'] != 'page':
             continue
 
@@ -153,7 +164,7 @@ def get_all_pages(client: Client) -> List[Page]:
             title = id_to_title[parent_id] + ' / ' + title
             parent_id = id_to_parent_id[parent_id]
 
-        title = 'Page: ' + title
+        title = 'Title: ' + title
         title += format_properties(result)
 
         url = result['url']
