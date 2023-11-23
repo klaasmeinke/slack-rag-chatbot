@@ -80,7 +80,7 @@ def get_all_pages(client: Client) -> List[Page]:
 
     while has_more:
         response = client.search(
-            query='GCP',
+            query='',
             page_size=100,
             filter={'value': 'page', 'property': 'object'},
             start_cursor=start_cursor
