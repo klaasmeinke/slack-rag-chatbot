@@ -52,9 +52,6 @@ class Page(BaseModel):
 
             block_type = block['type']
             if block_type not in prefixes.keys():
-                print(block_type)
-                print(block)
-                print()
                 continue
             if not block[block_type]['rich_text']:
                 continue
