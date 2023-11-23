@@ -88,7 +88,7 @@ def get_all_pages(client: Client) -> List[Page]:
 
     while has_more:
         response = client.search(
-            query='AI',
+            query='',
             page_size=100,
             start_cursor=start_cursor
         )
