@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import os
 from notion_client import Client
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 
 
@@ -11,14 +11,21 @@ class Page(BaseModel):
     content: str
     is_scraped: bool
 
-    def scrape(self, client):
-        if self.is_scraped:
+    def scrape(self, client, block_id: Optional[str] = None):
+        if self.is_scraped and block_id is None:
             return False
 
-        self.is_scraped = True
-        all_blocks = client.blocks.children.list(self.url[-32:], page_size=100)['results']
+        if block_id is None:
+            self.is_scraped = True
+            block_id = self.url[-32:]
+            is_child = False
+        else:
+            is_child = True
+
+        all_blocks = client.blocks.children.list(block_id, page_size=100)['results']
 
         prefixes = {
+            'code': '\n```',
             'callout': '\n',
             'paragraph': '\n',
             'heading_3': '\n###',
@@ -29,18 +36,43 @@ class Page(BaseModel):
             'bulleted_list_item': '\n-',
         }
 
+        suffixes = {
+            'code': '```',
+            'callout': '',
+            'paragraph': '',
+            'heading_3': '',
+            'heading_2': '',
+            'heading_1': '',
+            'to_do': '',
+            'numbered_list_item': '',
+            'bulleted_list_item': '',
+        }
+
         for block in all_blocks:
+
             block_type = block['type']
             if block_type not in prefixes.keys():
+                print(block_type)
+                print(block)
+                print()
                 continue
             if not block[block_type]['rich_text']:
                 continue
 
-            self.content += prefixes[block_type]
-            self.content += ''.join([b['text']['content'] for b in block[block_type]['rich_text'] if 'text' in b])
+            block_content = prefixes[block_type]
+            block_content += ''.join([b['text']['content'] for b in block[block_type]['rich_text'] if 'text' in b])
+            block_content += suffixes[block_type]
 
             if block_type == 'to_do':
                 self.content += ' (done)' if block['to_do']['checked'] else ' (to-do)'
+
+            if is_child:
+                block_content = block_content.replace('\n', '\n  ')
+
+            self.content += block_content
+
+            if block['has_children']:
+                self.scrape(client, block_id=block['id'])
 
 
 def get_all_pages(client: Client) -> List[Page]:
@@ -51,7 +83,7 @@ def get_all_pages(client: Client) -> List[Page]:
 
     while has_more:
         response = client.search(
-            query='',
+            query='GCP',
             page_size=100,
             filter={'value': 'page', 'property': 'object'},
             start_cursor=start_cursor
