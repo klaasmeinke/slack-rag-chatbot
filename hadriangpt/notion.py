@@ -1,27 +1,55 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from notion_client import Client
-from typing import List, Optional
+from typing import List
 from pydantic import BaseModel
 
 
 class Page(BaseModel):
-    title: Optional[str]
     url: str
-    last_edited: Optional[datetime]
-    content: Optional[str] = None
+    last_edited: datetime
+    content: str
+    is_scraped: bool
+
+    def scrape(self, client):
+        if self.is_scraped:
+            return False
+
+        self.is_scraped = True
+        all_blocks = client.blocks.children.list(self.url[-32:], page_size=100)['results']
+
+        prefixes = {
+            'callout': '\n',
+            'paragraph': '\n',
+            'heading_3': '\n###',
+            'heading_2': '\n##',
+            'heading_1': '\n# ',
+            'to_do': '\n-',
+            'numbered_list_item': '\n-',
+            'bulleted_list_item': '\n-',
+        }
+
+        for block in all_blocks:
+            block_type = block['type']
+            if block_type not in prefixes.keys():
+                continue
+            if not block[block_type]['rich_text']:
+                continue
+
+            self.content += prefixes[block_type]
+            self.content += ''.join([b['text']['content'] for b in block[block_type]['rich_text'] if 'text' in b])
+
+            if block_type == 'to_do':
+                self.content += ' (done)' if block['to_do']['checked'] else ' (to-do)'
 
 
 def get_all_pages(client: Client) -> List[Page]:
-    """returns pages without content"""
+    """ returns all notion pages. pages are not scraped """
     has_more = True
-    i = 0
-    pages = []
     start_cursor = None
+    results = []
 
     while has_more:
-        i += 1
-
         response = client.search(
             query='',
             page_size=100,
@@ -31,57 +59,94 @@ def get_all_pages(client: Client) -> List[Page]:
 
         start_cursor = response['next_cursor']
         has_more = response['has_more']
+        results += response['results']
 
-        new_pages = [
-            Page(
-                title=page['properties']['title']['title'][0]['text']['content'] if 'title' in page['properties'] else None,
-                url=page['url'],
-                last_edited=datetime.strptime(page['last_edited_time'], "%Y-%m-%dT%H:%M:%S.%fZ"),
-            )
-            for page in response['results'] if not page['archived']
-        ]
+    def get_title(_result) -> str:
+        for key in _result['properties']:
+            if _result['properties'][key]['id'] == 'title':
+                if _result['properties'][key]['title'] and 'text' in _result['properties'][key]['title'][0]:
+                    return _result['properties'][key]['title'][0]['text']['content']
+                else:
+                    return 'Untitled'
+        return 'Untitled'
 
-        pages += new_pages
+    def format_properties(_result):
+        prop_string = ''
+
+        def _get_content(_prop_info: dict):
+            _child = _prop_info
+            while isinstance(_child, dict) and 'type' in _child:
+                _child = _child[_child['type']]
+            while isinstance(_child, dict) and 'name' in _child:
+                _child = _child['name']
+            while isinstance(_child, dict) and 'plain_text' in _child:
+                _child = _child['plain_text']
+            while isinstance(_child, dict) and 'content' in _child:
+                _child = _child['content']
+            while isinstance(_child, dict) and 'email' in _child:
+                _child = _child['email']
+            if isinstance(_child, dict) and 'id' in _child:
+                return ''
+            if not _child:
+                return ''
+            if isinstance(_child, list):
+                _child = ' '.join(_get_content(x) for x in _child)
+
+            return str(_child).strip()
+
+        for prop_name, prop_info in _result['properties'].items():
+            if prop_info['id'] == 'title':
+                continue
+            prop_string += f'\n{prop_name}: '
+            prop_string += _get_content(prop_info)
+
+        return prop_string
+
+    id_to_title = {result['id']: get_title(result) for result in results}
+
+    id_to_parent_id = {
+        result['id']: result['parent']['page_id'] for result in results
+        if 'parent' in result and result['parent']['type'] == 'page_id'
+    }
+
+    pages: List[Page] = []
+
+    for result in results:
+
+        # get page title including chain of parents
+        title = get_title(result)
+        parent_id = id_to_parent_id.get(result['id'])
+
+        while parent_id in id_to_parent_id:
+            title = id_to_title[parent_id] + ' / ' + title
+            parent_id = id_to_parent_id[parent_id]
+
+        title = 'Page: ' + title
+        title += format_properties(result)
+
+        url = result['url']
+        last_edited = datetime.strptime(result['last_edited_time'], "%Y-%m-%dT%H:%M:%S.%fZ")
+
+        page = Page(content=title, url=url, last_edited=last_edited, is_scraped=False)
+        pages.append(page)
 
     return pages
 
 
-def scrape_page(page: Page, client: Client) -> Page:
-    """adds content to a single page"""
-    all_blocks = client.blocks.children.list(page.url[-32:], page_size=100)['results']
+def test_notion_scraping():
+    notion_client = Client(auth=os.getenv("NOTION_API_KEY"))
+    pages = get_all_pages(notion_client)
 
-    text = '' if page.title is None else 'Page Title: ' + page.title
-
-    prefixes = {
-        'paragraph': '\n',
-        'heading_3': '\n###',
-        'heading_2': '\n##',
-        'heading_1': '\n#'
-    }
-
-    for block in all_blocks:
-
-        block_type = block['type']
-
-        if block_type not in prefixes.keys():
+    for page in pages:
+        if datetime.now() - timedelta(days=3) > page.last_edited:  # not edited in last 3 days
             continue
 
-        if not block[block_type]['rich_text']:
-            continue
+        page.scrape(notion_client)
 
-        text += prefixes[block_type]
-        text += ''.join([b['text']['content'] for b in block[block_type]['rich_text'] if 'text' in b])
-
-    page.content = text
-    return page
+        print(f'------ {page.url} --------')
+        print(f'last edited: {page.last_edited}')
+        print(page.content)
 
 
 if __name__ == "__main__":
-    notion_client = Client(auth=os.getenv("NOTION_API_KEY"))
-
-    _pages = get_all_pages(notion_client)
-
-    for _page in _pages:
-        print(f'------ {_page.url} --------')
-        _page = scrape_page(_page, notion_client)
-        print(_page.content)
+    test_notion_scraping()
