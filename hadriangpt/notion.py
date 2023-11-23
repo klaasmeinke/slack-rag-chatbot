@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
-import os
 from notion_client import Client
-from typing import List, Optional
+import os
 from pydantic import BaseModel
+from typing import List, Optional
 
 
 class Page(BaseModel):
