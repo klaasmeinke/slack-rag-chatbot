@@ -31,9 +31,9 @@ class Page(BaseModel):
             'heading_3': '\n###',
             'heading_2': '\n##',
             'heading_1': '\n# ',
-            'to_do': '\n-',
-            'numbered_list_item': '\n-',
-            'bulleted_list_item': '\n-',
+            'to_do': '\n- ',
+            'numbered_list_item': '\n- ',
+            'bulleted_list_item': '\n- ',
         }
 
         suffixes = {
