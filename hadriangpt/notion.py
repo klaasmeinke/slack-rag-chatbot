@@ -99,8 +99,7 @@ def get_all_pages(client: Client) -> List[Page]:
 
     def get_title(_result) -> str:
 
-        if _result['object'] == 'database':
-            assert _result['object'] == 'database'
+        if _result['object'] == 'database' and _result['title']:
             return _result['title'][0]['text']['content']
 
         for key in _result['properties']:
