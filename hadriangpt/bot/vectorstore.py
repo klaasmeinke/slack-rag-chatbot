@@ -15,18 +15,21 @@ class VectorDB:
         self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=max_tokens_per_docs, chunk_overlap=50)
 
     def add_docs(self, docs):
+        if not len(docs):
+            return
+
         self._text_splitter.split_documents(docs)
-        page_urls = list(set([doc.metadata['page_url'] for doc in docs]))
-        for page in page_urls:
-            self._delete_by_page_url(page)
+        sources = list(set([doc.metadata['source'] for doc in docs]))
+        for source in sources:
+            self._delete_by_source(source)
         self._vectorstore.add_documents(docs)
 
-    def _delete_by_page_url(self, page):
+    def _delete_by_source(self, page):
         # look up docs by source
         d = self._vectorstore.docstore._dict
         to_delete = []
         for key in d:
-            if d[key].metadata['page_url'] == page:
+            if d[key].metadata['source'] == page:
                 to_delete.append(key)
 
         if not to_delete:

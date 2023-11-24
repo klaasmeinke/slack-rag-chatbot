@@ -17,14 +17,13 @@ class Bot:
         return self.chain({"question": question})
 
     def add_docs(self, docs: list[dict]):
-        docs = [Document(
-            page_content=doc['content'],
-            metadata={
-                'source': doc['source_url'],
-                'page_url': doc['page_url']
-            }
-        ) for doc in docs]
-        self._vectorstore.add_docs(docs)
+        self._vectorstore.add_docs([
+            Document(
+                page_content=doc['content'],
+                metadata={'source': doc['source']}
+            )
+            for doc in docs
+        ])
 
 
 if __name__ == "__main__":

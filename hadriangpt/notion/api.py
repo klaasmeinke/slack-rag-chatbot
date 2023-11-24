@@ -5,15 +5,21 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 
+_default_client = Client(auth=os.getenv("NOTION_API_KEY"))
+
+
 class Page(BaseModel):
     url: str
     last_edited: datetime
     content: str
     is_scraped: bool
 
-    def scrape(self, client, block_id: Optional[str] = None):
+    def scrape(self, client = None, block_id: Optional[str] = None):
         if self.is_scraped and block_id is None:
             return False
+
+        if client is None:
+            client = _default_client
 
         if block_id is None:
             self.is_scraped = True
@@ -80,8 +86,11 @@ class Page(BaseModel):
                 self.scrape(client, block_id=block['id'])
 
 
-def get_all_pages(client: Client) -> List[Page]:
+def get_all_pages(client: Client = None) -> List[Page]:
     """ returns all notion pages. pages are not scraped """
+    if client is None:
+        client = _default_client
+
     has_more = True
     start_cursor = None
     results = []
@@ -100,7 +109,8 @@ def get_all_pages(client: Client) -> List[Page]:
     def get_title(_result) -> str:
 
         if _result['object'] == 'database':
-            assert _result['object'] == 'database'
+            if not len(_result['title']):
+                return 'Untitled'
             return _result['title'][0]['text']['content']
 
         for key in _result['properties']:
