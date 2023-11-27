@@ -1,4 +1,5 @@
 from datetime import datetime
+from concurrent.futures import ProcessPoolExecutor
 
 from hadriangpt.notion.api import get_all_pages, Page
 from hadriangpt.bot.bot import Bot
@@ -11,19 +12,33 @@ def is_within_working_hours(dt: datetime) -> bool:
     return 8 <= dt.hour <= 18
 
 
-def refresh_notion() -> list[Page]:
+def refresh_notion_and_embed_docs(bot: Bot) -> list[Page]:
     global last_refresh
 
     if last_refresh and not is_within_working_hours(last_refresh):
         return []
 
+    executor = ProcessPoolExecutor(max_workers=20)
+
+    def _scrape_and_add(args):
+        page, bot = args
+        page.scrape()
+        if page.is_scraped:
+            bot.add_docs([{
+                'content': page.content,
+                'source': page.url
+            }])
+
     pages = get_all_pages()
     print(f"Refreshing {len(pages)} pages")
     for page in pages:
         if last_refresh is None or last_refresh < page.last_edited:
-            page.scrape()
+            executor.submit(_scrape_and_add, (page, bot))
 
+    # wait for all threads to finish
+    executor.shutdown(wait=True)
     print("refresh finished")
+    print(len(bot._vectorstore._vectorstore.docstore._dict))
     last_refresh = datetime.now()
     return [page for page in pages if page.is_scraped]
 
@@ -34,7 +49,7 @@ def start_refresh_task(bot: Bot):
 
     def refresh(bot: Bot):
         while True:
-            pages = refresh_notion()
+            pages = refresh_notion_and_embed_docs(bot)
             bot.add_docs([
                 {
                     'content': page.content,

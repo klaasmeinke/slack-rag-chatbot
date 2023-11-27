@@ -3,9 +3,11 @@ from notion_client import Client
 import os
 from pydantic import BaseModel
 from typing import List, Optional
+from ratemate import RateLimit
 
 
 _default_client = Client(auth=os.getenv("NOTION_API_KEY"))
+rate_limit = RateLimit(max_count=3, per=1, greedy=True)
 
 
 class Page(BaseModel):
@@ -14,7 +16,7 @@ class Page(BaseModel):
     content: str
     is_scraped: bool
 
-    def scrape(self, client = None, block_id: Optional[str] = None):
+    def scrape(self, client: Client = None, block_id: Optional[str] = None):
         if self.is_scraped and block_id is None:
             return False
 
@@ -28,6 +30,7 @@ class Page(BaseModel):
         else:
             is_child = True
 
+        rate_limit.wait()
         all_blocks = client.blocks.children.list(block_id, page_size=100)['results']
 
         prefixes = {
