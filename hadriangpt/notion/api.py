@@ -3,6 +3,10 @@ from notion_client import Client
 import os
 from pydantic import BaseModel
 from typing import List, Optional
+from ratemate import RateLimit
+
+
+rate_limit = RateLimit(max_count=3, per=1, greedy=True)
 
 
 class Page(BaseModel):
@@ -27,6 +31,7 @@ class Page(BaseModel):
     def scrape_block(self, client: Client, block_id: str):
         """ recursive function that scrapes a block and its children and adds them to the content """
         children = client.blocks.children.list(block_id, page_size=100)['results']
+        rate_limit.wait()
 
         for block in children:
             formatted_block = self.format_block(block)
