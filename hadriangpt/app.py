@@ -2,9 +2,25 @@ from flask import Flask, request, make_response
 from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
 import requests
-from config import config
 
-app = App(token=config.slack_token, signing_secret=config.slack_signing_secret)
+import os
+from pydantic import BaseModel
+
+
+class Config(BaseModel):
+    SLACK_TOKEN: str
+    SLACK_SIGNING_SECRET: str
+    SLACK_COMMAND: str
+    PORT: int
+
+    class Config:
+        extra = "ignore"  # ignore additional keys
+
+
+env_config = os.environ
+config = Config(**env_config)
+
+app = App(token=config.SLACK_TOKEN, signing_secret=config.SLACK_SIGNING_SECRET)
 
 
 @app.command(f"/{config.slack_command}")
@@ -48,4 +64,4 @@ def slack_events():
 
 
 if __name__ == "__main__":
-    flask_app.run(debug=True, port=config.port)
+    flask_app.run(debug=True, port=config.PORT)

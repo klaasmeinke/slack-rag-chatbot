@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from typing import Optional
 from hadriangpt.notion.api import get_all_pages, Page
 from hadriangpt.bot.bot import Bot
 
@@ -7,7 +7,7 @@ last_refresh = None
 SCRAPE_INTERVAL_SECONDS = 60 * 60
 
 
-def is_within_working_hours(dt: datetime) -> bool:
+def is_within_working_hours(dt: Optional[datetime]) -> bool:
     return 8 <= dt.hour <= 18
 
 
