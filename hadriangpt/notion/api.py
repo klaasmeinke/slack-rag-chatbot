@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
+import json
 from notion_client import Client
 import os
 from pydantic import BaseModel
-from typing import List, Optional
-from ratemate import RateLimit
+from ratemate import RateLimit  # type: ignore
+from typing import Dict, List, Optional
 
 
 rate_limit = RateLimit(max_count=3, per=1, greedy=True)
@@ -11,19 +12,23 @@ rate_limit = RateLimit(max_count=3, per=1, greedy=True)
 
 class Page(BaseModel):
     url: str
-    last_edited: datetime
     header: str
+    last_edited: datetime
     content: str = ''
-    is_scraped: bool = False
-    _depth = 0  # used to track indentation level when blocks are scraped
+    last_scraped: datetime = datetime.min
+    _depth: int = 0  # used to track indentation level when blocks are scraped
 
     def __str__(self):
         return self.header + self.content
 
+    @property
+    def is_scraped(self):
+        return self.last_scraped >= self.last_edited
+
     def scrape(self, client):
         if self.is_scraped:
             return
-        self.is_scraped = True
+        self.last_scraped = datetime.now()
         block_id = self.url[-32:]
         self._depth = 0
         self.scrape_block(client, block_id)
@@ -36,8 +41,7 @@ class Page(BaseModel):
         for block in children:
             formatted_block = self.format_block(block)
             if formatted_block:
-                formatted_block = formatted_block.replace('\n', '\n'+self._depth*'  ')
-                self.content += formatted_block
+                self.content += formatted_block.replace('\n', '\n'+self._depth*'  ')
             if block['has_children'] and block['type'] != 'child_page':
                 self._depth += 1
                 self.scrape_block(client, block_id=block['id'])
@@ -92,20 +96,65 @@ class Page(BaseModel):
 
         return None
 
+    def save_to_dict(self) -> Dict[str, str]:
+        return {
+            'url': self.url,
+            'header': self.header,
+            'content': self.content,
+            'last_edited': self.last_edited.isoformat(),
+            'last_scraped': self.last_scraped.isoformat(),
+        }
+
+    @classmethod
+    def load_from_dict(cls, data: Dict[str, str]) -> 'Page':
+        typed_data = {
+            k: (datetime.fromisoformat(v) if k in ['last_edited', 'last_scraped'] else v)
+            for k, v in data.items()
+        }
+        return cls(**typed_data)  # type: ignore
+
+    def update_from_page(self, page: 'Page'):
+        assert self.url == page.url, "can only update from another page that has the same url"
+
+        if page.last_edited > self.last_edited:
+            self.last_edited = page.last_edited
+            self.header = page.header
+
+        if page.last_scraped > self.last_scraped:
+            self.last_scraped = page.last_scraped
+            self.content = page.content
+
 
 class Notion:
-    def __init__(self):
+    def __init__(self, fetch_pages: bool = False, load_from_data: bool = False, scrape_pages: bool = False):
         self.client = Client(auth=os.getenv("NOTION_API_KEY"))
-        self.pages: List[Page] = []
-        self.get_all_pages()  # creates a list of unscraped pages
+        self.pages: Dict[str, Page] = dict()
 
-    def scrape_pages(self, last_edited_gt: datetime = datetime(year=2000, month=1, day=1)):
-        for page in self.pages:
-            if page.last_edited > last_edited_gt:
-                page.scrape(self.client)
-                print('\n\n' + str(page))
+        if fetch_pages:
+            self.fetch_pages()  # creates a list of unscraped pages
+        if load_from_data:
+            self.load_from_data()
+        if scrape_pages:
+            self.scrape_pages()
 
-    def get_all_pages(self):
+    def scrape_pages(self):
+        for page in self.pages.values():
+            page.scrape(self.client)
+            print('\n\n' + str(page))
+
+    def add_page(self, page: Page, insert_if_new: bool):
+        if page.url in self.pages:
+            self.pages[page.url].update_from_page(page)
+        elif insert_if_new:
+            self.pages[page.url] = page
+
+    def keep_last_n_pages(self, n: int):
+        """ used for testing """
+        last_edited_list = sorted([p.last_edited for p in self.pages.values()])
+        threshold = last_edited_list[-n]
+        self.pages = {url: page for url, page in self.pages.items() if page.last_edited >= threshold}
+
+    def fetch_pages(self):
         """ fill self.pages with all pages from notion (unscraped) """
 
         # make api requests to get all pages and append them to results
@@ -150,28 +199,25 @@ class Notion:
 
             # get page title including chain of parents
             title = extract_title_from_response(result)
+            last_edited = datetime.strptime(result['last_edited_time'], "%Y-%m-%dT%H:%M:%S.%fZ")
+            url = result['url']
 
             parent_id = id_to_parent_id.get(result['id'])
             while parent_id in id_to_parent_id:
-                title = id_to_title[parent_id] + ' / ' + title
+                title = id_to_title[parent_id] + '/' + title
                 parent_id = id_to_parent_id[parent_id]
 
-            title = 'Title: ' + title
-
-            formatted_properties = ''
-
-            for prop_name, prop_info in result['properties'].items():
-                if prop_info['id'] == 'title':
-                    continue
-                formatted_properties += f'\n{prop_name}: '
-                formatted_properties += self._extract_content_from_properties(prop_info)
-
-            header = title + formatted_properties
-            url = result['url']
-            last_edited = datetime.strptime(result['last_edited_time'], "%Y-%m-%dT%H:%M:%S.%fZ")
+            header_items = [f'Title: {title}', f'Last Edited: {last_edited}']
+            formatted_properties = [
+                f'{prop_name}: {self._extract_content_from_properties(prop_info)}'
+                for prop_name, prop_info in result['properties'].items()
+                if prop_info['id'] != 'title'
+            ]
+            header_items += formatted_properties
+            header = '\n'.join(header_items)
 
             page = Page(header=header, url=url, last_edited=last_edited)
-            self.pages.append(page)
+            self.add_page(page, insert_if_new=True)
 
     def _extract_content_from_properties(self, _prop_info: dict) -> str:
         """ recursive function that iteratively unpack the properties dict to extract content"""
@@ -195,17 +241,30 @@ class Notion:
 
         return str(_child).strip()
 
+    def save_data(self, file_path: str = 'data.json'):
+        data = [p.save_to_dict() for p in self.pages.values()]
+        with open(file_path, 'w') as f:
+            json.dump(data, f)
+
+    def load_from_data(self, file_path: str = 'data.json', insert_new_pages: bool = False):
+        with open(file_path) as json_file:
+            data: List[Dict[str, str]] = json.load(json_file)
+        for page_data in data:
+            page = Page.load_from_dict(page_data)
+            self.add_page(page, insert_if_new=insert_new_pages)
+
 
 def test_notion_scraping():
-    notion = Notion()
+    notion = Notion(fetch_pages=True)
     print(f'found {len(notion.pages)} notion pages in total')
 
-    days = 10
-    last_edited_gt = datetime.now() - timedelta(days=days)
-    pages = [p for p in notion.pages if p.last_edited > last_edited_gt]
-    print(f'found {len(pages)} pages that were edited in last {days} days')
+    notion.keep_last_n_pages(10)
+    print(f'reduced to {len(notion.pages)} pages')
 
-    notion.scrape_pages(last_edited_gt)
+    notion.load_from_data()
+    notion.scrape_pages()
+
+    notion.save_data()
 
 
 if __name__ == "__main__":

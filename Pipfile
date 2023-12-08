@@ -14,6 +14,7 @@ ratemate = "*"
 slack-bolt = "*"
 flask = "*"
 requests = "*"
+mypy = "*"
 
 [dev-packages]
 
