@@ -1,6 +1,5 @@
 from typing import Dict, List, Optional
 from functools import cached_property
-from hadriangpt import notion
 import hashlib
 import json
 import numpy as np
@@ -37,8 +36,9 @@ class Retriever:
         self.embeddings_file = embeddings_file
         self.embeddings_cache: Dict[str, List[float]] = dict()
         self.load_embedding_file()
+        self.add_notion_pages()
 
-    def __call__(self, query: str, token_limit: int = 2000):
+    def __call__(self, query: str, token_limit: int = 2000) -> List[str]:
         query_embedding = self.fetch_embedding(query)
         query_vector = np.asarray(query_embedding)
         query_vector_norm = query_embedding / np.linalg.norm(query_vector)
@@ -54,12 +54,13 @@ class Retriever:
             token_count += doc.token_count
             if token_count > token_limit:
                 break
-            selected_docs.append(doc)
+            selected_docs.append(str(doc))
 
         return selected_docs
 
-    def add_notion_pages(self, notion_object: notion.Notion):
-        for page in notion_object.pages.values():
+    def add_notion_pages(self):
+        notion = Notion()
+        for page in notion.pages.values():
             if not str(page).strip():
                 continue
             doc = Doc(content=str(page), source=page.url)
@@ -96,9 +97,7 @@ class Retriever:
 
 
 def main():
-    notion_object = Notion()
     retriever = Retriever()
-    retriever.add_notion_pages(notion_object)
     docs = retriever('What resources do we have for LLama?')
     for doc in docs:
         print(doc)

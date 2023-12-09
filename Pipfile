@@ -6,8 +6,6 @@ name = "pypi"
 [packages]
 pydantic = "==2.5.2"
 notion-client = "==2.1.0"
-faiss-cpu = "==1.7.4"
-langchain = "==0.0.340"
 openai = "==1.3.5"
 tiktoken = "==0.5.1"
 ratemate = "*"
