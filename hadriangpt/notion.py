@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import json
 from notion_client import Client
 import os
 from pydantic import BaseModel
 from ratemate import RateLimit  # type: ignore
+from tqdm import tqdm
 from typing import Dict, List, Optional
 
 
@@ -126,31 +127,41 @@ class Page(BaseModel):
 
 
 class Notion:
-    def __init__(self, fetch_pages: bool = False, load_from_data: bool = False, scrape_pages: bool = False):
+    def __init__(self, fetch_pages: bool = False, scrape_pages: bool = False, data_file: str = 'data/notion.json'):
         self.client = Client(auth=os.getenv("NOTION_API_KEY"))
         self.pages: Dict[str, Page] = dict()
+        self.data_file = data_file
+        self.load_from_data()
 
         if fetch_pages:
             self.fetch_pages()  # creates a list of unscraped pages
-        if load_from_data:
-            self.load_from_data()
         if scrape_pages:
             self.scrape_pages()
 
-    def scrape_pages(self):
-        for page in self.pages.values():
-            page.scrape(self.client)
-            print('\n\n' + str(page))
+    @property
+    def unscraped_pages(self) -> List[str]:
+        return [page.url for page in self.pages.values() if not page.is_scraped]
 
-    def add_page(self, page: Page, insert_if_new: bool):
+    @property
+    def page_list(self) -> List[Page]:
+        return list(self.pages.values())
+
+    def scrape_pages(self):
+        if self.unscraped_pages:
+            print('scraping notion pages')
+            for url in tqdm(self.unscraped_pages):
+                self.pages[url].scrape(client=self.client)
+                self.save_data()
+
+    def add_page(self, page: Page):
         if page.url in self.pages:
             self.pages[page.url].update_from_page(page)
-        elif insert_if_new:
+        else:
             self.pages[page.url] = page
 
     def keep_last_n_pages(self, n: int):
         """ used for testing """
-        last_edited_list = sorted([p.last_edited for p in self.pages.values()])
+        last_edited_list = sorted([p.last_edited for p in self.page_list])
         threshold = last_edited_list[-n]
         self.pages = {url: page for url, page in self.pages.items() if page.last_edited >= threshold}
 
@@ -217,10 +228,10 @@ class Notion:
             header = '\n'.join(header_items)
 
             page = Page(header=header, url=url, last_edited=last_edited)
-            self.add_page(page, insert_if_new=True)
+            self.add_page(page)
 
     def _extract_content_from_properties(self, _prop_info: dict) -> str:
-        """ recursive function that iteratively unpack the properties dict to extract content"""
+        """recursive function that unpacks the properties dict to extract content"""
         _child = _prop_info
         while isinstance(_child, dict) and 'type' in _child:
             _child = _child[_child['type']]
@@ -241,31 +252,29 @@ class Notion:
 
         return str(_child).strip()
 
-    def save_data(self, file_path: str = 'data.json'):
+    def save_data(self):
         data = [p.save_to_dict() for p in self.pages.values()]
-        with open(file_path, 'w') as f:
+        with open(self.data_file, 'w') as f:
             json.dump(data, f)
 
-    def load_from_data(self, file_path: str = 'data.json', insert_new_pages: bool = False):
-        with open(file_path) as json_file:
+    def load_from_data(self):
+        if not os.path.exists(self.data_file):
+            return
+        with open(self.data_file) as json_file:
             data: List[Dict[str, str]] = json.load(json_file)
         for page_data in data:
             page = Page.load_from_dict(page_data)
-            self.add_page(page, insert_if_new=insert_new_pages)
+            self.add_page(page)
 
 
-def test_notion_scraping():
-    notion = Notion(fetch_pages=True)
-    print(f'found {len(notion.pages)} notion pages in total')
+def refresh_data():
+    print('Fetching all pages from notion... ', end='')
+    notion = Notion(fetch_pages=True, scrape_pages=True)
+    print(len(notion.pages))
 
-    notion.keep_last_n_pages(10)
-    print(f'reduced to {len(notion.pages)} pages')
-
-    notion.load_from_data()
+    print(f'Scraping {len(notion.unscraped_pages)} pages')
     notion.scrape_pages()
-
-    notion.save_data()
 
 
 if __name__ == "__main__":
-    test_notion_scraping()
+    refresh_data()
