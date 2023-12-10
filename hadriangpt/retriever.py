@@ -1,10 +1,11 @@
-from typing import Dict, List, Optional
 from functools import cached_property
+from hadriangpt.config import Config
 import hashlib
 import json
 import numpy as np
 import tiktoken
 from tqdm import tqdm
+from typing import Dict, List, Optional
 from openai import OpenAI
 import os
 from pydantic import BaseModel, Field
@@ -25,20 +26,19 @@ class Doc(BaseModel):
 
     @cached_property
     def token_count(self):
-        encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        encoding = tiktoken.encoding_for_model(Config.chat_model)
         return len(encoding.encode(self.content))
 
 
 class Retriever:
-    def __init__(self, embeddings_file: str = 'data/embeddings.json'):
+    def __init__(self):
         self.openai_client = OpenAI()
         self.docs: Dict[str, Doc] = dict()
-        self.embeddings_file = embeddings_file
         self.embeddings_cache: Dict[str, List[float]] = dict()
         self.load_embedding_file()
         self.add_notion_pages()
 
-    def __call__(self, query: str, token_limit: int = 2000) -> List[str]:
+    def __call__(self, query: str) -> List[str]:
         query_embedding = self.fetch_embedding(query)
         query_vector = np.asarray(query_embedding)
         query_vector_norm = query_embedding / np.linalg.norm(query_vector)
@@ -52,7 +52,7 @@ class Retriever:
             doc_id = list(self.embeddings_cache.keys())[index]
             doc = self.docs[doc_id]
             token_count += doc.token_count
-            if token_count > token_limit:
+            if token_count > Config.query_token_limit:
                 break
             selected_docs.append(str(doc))
 
@@ -82,21 +82,22 @@ class Retriever:
         for key, doc in self.docs.items():
             doc.embedding = self.embeddings_cache[key]
 
-    def fetch_embedding(self, text: str, model: str = "text-embedding-ada-002"):
+    def fetch_embedding(self, text: str):
         text = text.replace("\n", " ")
-        return self.openai_client.embeddings.create(input=[text], model=model).data[0].embedding
+        return self.openai_client.embeddings.create(input=[text], model=Config.embeddings_model).data[0].embedding
 
     def save_embeddings_file(self):
-        with open(self.embeddings_file, 'w') as f:
+        os.makedirs(Config.data_dir, exist_ok=True)
+        with open(Config.embeddings_cache_file, 'w') as f:
             json.dump(self.embeddings_cache, f)
 
     def load_embedding_file(self):
-        if os.path.exists(self.embeddings_file):
-            with open(self.embeddings_file) as json_file:
+        if os.path.exists(Config.embeddings_cache_file):
+            with open(Config.embeddings_cache_file) as json_file:
                 self.embeddings_cache = json.load(json_file)
 
 
-def main():
+def test():
     retriever = Retriever()
     docs = retriever('What resources do we have for LLama?')
     for doc in docs:
@@ -104,4 +105,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    test()

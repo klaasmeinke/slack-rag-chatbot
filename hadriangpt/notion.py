@@ -1,4 +1,5 @@
 from datetime import datetime
+from hadriangpt.config import Config
 import json
 from notion_client import Client
 import os
@@ -127,10 +128,9 @@ class Page(BaseModel):
 
 
 class Notion:
-    def __init__(self, fetch_pages: bool = False, scrape_pages: bool = False, data_file: str = 'data/notion.json'):
-        self.client = Client(auth=os.getenv("NOTION_API_KEY"))
+    def __init__(self, fetch_pages: bool = False, scrape_pages: bool = False):
+        self.client = Client(auth=Config.notion_api_key)
         self.pages: Dict[str, Page] = dict()
-        self.data_file = data_file
         self.load_from_data()
 
         if fetch_pages:
@@ -254,13 +254,14 @@ class Notion:
 
     def save_data(self):
         data = [p.save_to_dict() for p in self.pages.values()]
-        with open(self.data_file, 'w') as f:
+        os.makedirs(Config.data_dir, exist_ok=True)
+        with open(Config.notion_data_file, 'w') as f:
             json.dump(data, f)
 
     def load_from_data(self):
-        if not os.path.exists(self.data_file):
+        if not os.path.exists(Config.notion_data_file):
             return
-        with open(self.data_file) as json_file:
+        with open(Config.notion_data_file) as json_file:
             data: List[Dict[str, str]] = json.load(json_file)
         for page_data in data:
             page = Page.load_from_dict(page_data)
