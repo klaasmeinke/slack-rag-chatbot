@@ -233,7 +233,7 @@ class Notion:
             self.add_page(page)
 
     def _extract_content_from_properties(self, _prop_info: dict) -> str:
-        """recursive function that unpacks the properties dict to extract content"""
+        """recursively unpack the properties dict and extract content"""
         _child = _prop_info
         while isinstance(_child, dict) and 'type' in _child:
             _child = _child[_child['type']]

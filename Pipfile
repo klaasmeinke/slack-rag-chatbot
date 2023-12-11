@@ -21,6 +21,7 @@ numpy = "*"
 python_version = "3.11"
 
 [scripts]
+app = 'python -m hadriangpt.app'
 notion = 'python -m hadriangpt.notion'
 bot = 'python -m hadriangpt.bot'
 retrieve = 'python -m hadriangpt.retriever'

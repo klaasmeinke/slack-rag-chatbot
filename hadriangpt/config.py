@@ -12,7 +12,7 @@ class Config:
         self.OPENAI_API_KEY = None
 
         self.slack_command = 'hgpt'
-        self.port = '8000'
+        self.port = 8000
         self.data_dir = 'data'
         self.notion_data_file = 'notion.json'
         self.embeddings_cache_file = 'embeddings.json'
@@ -25,7 +25,7 @@ class Config:
         self.load_env_config()
         self.load_cli_config(args)
 
-        # validate that all variables are set
+        # validate that all variables are set (not None)
         self.validate_config()
 
     @property
@@ -36,27 +36,29 @@ class Config:
     def embeddings_cache_path(self):
         return os.path.join(self.data_dir, self.embeddings_cache_file)
 
-    @property
-    def config_values(self):
-        return [attr for attr in dir(self) if not (attr.startswith('__') and attr.endswith('__'))]
+    def help_message(self, config_value: str):
+        mapping = {
+            'slack_command': 'command to use in slack to chat with the bot',
+            'port': 'port that the bot is exposed on',
+        }
+
+        assert config_value in vars(self), f'{config_value} is not a valid config value'
+        assert all(key in vars(self) for key in mapping), 'mapping dict contains invalid config values'
+        return mapping.get(config_value)
 
     def load_env_config(self):
         for key, value in os.environ.items():
-            if not hasattr(self, key):
-                continue
-            setattr(self, key, value)
+            if hasattr(self, key):
+                setattr(self, key, value)
 
     def load_cli_config(self, args: argparse.Namespace | None):
         if args is None:
             return
         for key, value in vars(args).items():
-            if not hasattr(self, key):
-                continue
-            if value is None:
-                continue
-            setattr(self, key, value)
+            if hasattr(self, key) and value is not None:
+                setattr(self, key, value)
 
     def validate_config(self):
-        none_attrs = [attr for attr in self.config_values if getattr(self, attr) is None]
+        none_attrs = [attr for attr in vars(self) if getattr(self, attr) is None]
         if none_attrs:
-            raise ValueError(f'{none_attrs} should be defined in command line arguments or environmental variables.')
+            raise ValueError(f'{none_attrs} should be defined in environmental variables or command line arguments.')
