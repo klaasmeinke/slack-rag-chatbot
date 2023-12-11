@@ -34,7 +34,6 @@ class Retriever:
     def __init__(self):
         self.openai_client = OpenAI()
         self.docs: List[Doc] = []
-        self.embeddings_cache: Dict[str, List[float]] = dict()  # key = content hash, value = content embedding
         self.add_notion_pages()
 
     def __call__(self, query: str) -> List[str]:
@@ -66,34 +65,34 @@ class Retriever:
         self.add_embeddings_to_docs()
 
     def add_embeddings_to_docs(self):
-        # add embeddings to cache
-        self.load_embeddings_cache()
-        docs_without_embeddings = [doc for doc in self.docs if doc.content_hash not in self.embeddings_cache]
-        if docs_without_embeddings:
-            print('fetching embeddings...')
-            for doc in tqdm(docs_without_embeddings):
-                if doc.content_hash in self.embeddings_cache:
-                    continue
-                self.embeddings_cache[doc.content_hash] = self.fetch_embedding(doc.content)
-                self.save_embeddings_cache()
+        embeddings_cache = self.load_embeddings_cache()
+        docs_without_embeddings = [doc for doc in self.docs if doc.content_hash not in embeddings_cache]
+        for doc in tqdm(docs_without_embeddings, desc='Fetching Embeddings', disable=not docs_without_embeddings):
+            if doc.content_hash in embeddings_cache:
+                continue
+            embeddings_cache[doc.content_hash] = self.fetch_embedding(doc.content)
+            self.save_embeddings_cache(embeddings_cache)
 
         # add embeddings to docs
         for doc in self.docs:
-            doc.embedding = self.embeddings_cache[doc.content_hash]
+            doc.embedding = embeddings_cache[doc.content_hash]
 
     def fetch_embedding(self, text: str):
         text = text.replace("\n", " ").strip()
         return self.openai_client.embeddings.create(input=[text], model=Config.embeddings_model).data[0].embedding
 
-    def save_embeddings_cache(self):
+    @staticmethod
+    def save_embeddings_cache(cache: Dict[str, List[float]]):
         os.makedirs(Config.data_dir, exist_ok=True)
         with open(Config.embeddings_cache_file, 'w') as f:
-            json.dump(self.embeddings_cache, f)
+            json.dump(cache, f)
 
-    def load_embeddings_cache(self):
+    @staticmethod
+    def load_embeddings_cache() -> Dict[str, List[float]]:
         if os.path.exists(Config.embeddings_cache_file):
             with open(Config.embeddings_cache_file) as json_file:
-                self.embeddings_cache = json.load(json_file)
+                return json.load(json_file)
+        return dict()
 
 
 def test():

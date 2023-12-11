@@ -147,11 +147,9 @@ class Notion:
         return list(self.pages.values())
 
     def scrape_pages(self):
-        if self.unscraped_pages:
-            print('scraping notion pages')
-            for url in tqdm(self.unscraped_pages):
-                self.pages[url].scrape(client=self.client)
-                self.save_data()
+        for url in tqdm(self.unscraped_pages, desc='Scraping Notion Pages', disable=not self.unscraped_pages):
+            self.pages[url].scrape(client=self.client)
+            self.save_data()
 
     def add_page(self, page: Page):
         if page.url in self.pages:
@@ -160,13 +158,13 @@ class Notion:
             self.pages[page.url] = page
 
     def keep_last_n_pages(self, n: int):
-        """ used for testing """
+        """use for testing"""
         last_edited_list = sorted([p.last_edited for p in self.page_list])
         threshold = last_edited_list[-n]
         self.pages = {url: page for url, page in self.pages.items() if page.last_edited >= threshold}
 
     def fetch_pages(self):
-        """ fill self.pages with all pages from notion (unscraped) """
+        """fill self.pages with all pages from notion (unscraped)"""
 
         # make api requests to get all pages and append them to results
         has_more = True
