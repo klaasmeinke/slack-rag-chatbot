@@ -4,10 +4,11 @@ from openai import OpenAI
 
 
 class Bot:
-    def __init__(self):
-        self.retriever = Retriever()
-        self.openai_client = OpenAI()
-        with open(Config.system_prompt_file) as f:
+    def __init__(self, config: Config):
+        self.retriever = Retriever(config)
+        self.openai_client = OpenAI(api_key=config.OPENAI_API_KEY, organization=config.OPENAI_ORG)
+        self.config = config
+        with open(config.system_prompt_file) as f:
             self.system_prompt = f.read()
 
     def __call__(self, query: str):
@@ -18,7 +19,7 @@ class Bot:
         print(system_prompt)
 
         completion = self.openai_client.chat.completions.create(
-            model=Config.chat_model,
+            model=self.config.chat_model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": query}
@@ -29,7 +30,8 @@ class Bot:
 
 def test():
     """Chat with bot from cli."""
-    bot = Bot()
+    config = Config()
+    bot = Bot(config)
 
     while True:
         query = input('Query: ')

@@ -1,28 +1,62 @@
+import argparse
 import os
-import yaml
-
-with open('config.yaml', 'r') as f:
-    yaml_config = yaml.safe_load(f)
 
 
 class Config:
+    def __init__(self, args: argparse.Namespace | None = None):
 
-    # from env
-    notion_api_key = os.getenv('NOTION_API_KEY')
-    slack_token = os.getenv('SLACK_TOKEN')
-    slack_signing_secret = os.getenv('SLACK_SIGNING_SECRET')
+        self.NOTION_API_KEY = None
+        self.SLACK_TOKEN = None
+        self.SLACK_SIGNING_SECRET = None
+        self.OPENAI_ORG = None
+        self.OPENAI_API_KEY = None
 
-    # from yaml
-    slack_command = yaml_config['slack_command']
-    port = yaml_config['port']
-    data_dir = yaml_config['data_dir']
-    notion_data_file = os.path.join(yaml_config['data_dir'], yaml_config['notion_data_file'])
-    embeddings_cache_file = os.path.join(yaml_config['data_dir'], yaml_config['embeddings_cache_file'])
-    embeddings_model = yaml_config['embeddings_model']
-    query_token_limit = yaml_config['query_token_limit']
-    chat_model = yaml_config['chat_model']
-    system_prompt_file = yaml_config['system_prompt_file']
+        self.slack_command = 'hgpt'
+        self.port = '8000'
+        self.data_dir = 'data'
+        self.notion_data_file = 'notion.json'
+        self.embeddings_cache_file = 'embeddings.json'
+        self.embeddings_model = 'text-embedding-ada-002'
+        self.query_token_limit = 2000
+        self.chat_model = 'gpt-3.5-turbo'
+        self.system_prompt_file = 'resources/system_prompt.txt'
 
+        # override defaults with env variables and cli args
+        self.load_env_config()
+        self.load_cli_config(args)
 
-if __name__ == "__main__":
-    print(dir(Config))
+        # validate that all variables are set
+        self.validate_config()
+
+    @property
+    def notion_data_path(self):
+        return os.path.join(self.data_dir, self.notion_data_file)
+
+    @property
+    def embeddings_cache_path(self):
+        return os.path.join(self.data_dir, self.embeddings_cache_file)
+
+    @property
+    def config_values(self):
+        return [attr for attr in dir(self) if not (attr.startswith('__') and attr.endswith('__'))]
+
+    def load_env_config(self):
+        for key, value in os.environ.items():
+            if not hasattr(self, key):
+                continue
+            setattr(self, key, value)
+
+    def load_cli_config(self, args: argparse.Namespace | None):
+        if args is None:
+            return
+        for key, value in vars(args).items():
+            if not hasattr(self, key):
+                continue
+            if value is None:
+                continue
+            setattr(self, key, value)
+
+    def validate_config(self):
+        none_attrs = [attr for attr in self.config_values if getattr(self, attr) is None]
+        if none_attrs:
+            raise ValueError(f'{none_attrs} should be defined in command line arguments or environmental variables.')

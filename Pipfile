@@ -12,7 +12,6 @@ ratemate = "*"
 slack-bolt = "*"
 flask = "*"
 requests = "*"
-mypy = "*"
 tqdm = "*"
 numpy = "*"
 

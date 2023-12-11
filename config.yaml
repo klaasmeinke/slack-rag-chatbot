@@ -1,9 +1,0 @@
-slack_command: hgpt
-port: 8000
-data_dir: data
-notion_data_file: notion.json
-embeddings_cache_file: embeddings.json
-embeddings_model: text-embedding-ada-002
-query_token_limit: 2000
-chat_model: gpt-3.5-turbo
-system_prompt_file: resources/system_prompt.txt

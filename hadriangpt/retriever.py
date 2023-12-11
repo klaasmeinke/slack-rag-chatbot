@@ -5,20 +5,24 @@ import json
 import numpy as np
 import tiktoken
 from tqdm import tqdm
-from typing import Dict, List, Optional
+from typing import Dict, List
 from openai import OpenAI
 import os
-from pydantic import BaseModel, Field
 from hadriangpt.notion import Notion
 
 
-class Doc(BaseModel):
-    content: str = Field(frozen=True)
-    source: str = Field(frozen=True)
-    embedding: Optional[str] = None
+class Doc:
+    def __init__(self, content: str, source: str, config: Config):
+        self.content = content
+        self.source = source
+        self.config = config
+        self.embedding: List[float] | None = None
 
     def __str__(self):
         return self.content
+
+    def set_embedding(self, embedding: List[float]):
+        self.embedding = embedding
 
     @cached_property
     def content_hash(self):
@@ -26,13 +30,14 @@ class Doc(BaseModel):
 
     @cached_property
     def token_count(self):
-        encoding = tiktoken.encoding_for_model(Config.chat_model)
+        encoding = tiktoken.encoding_for_model(self.config.chat_model)
         return len(encoding.encode(self.content))
 
 
 class Retriever:
-    def __init__(self):
-        self.openai_client = OpenAI()
+    def __init__(self, config: Config):
+        self.config = config
+        self.openai_client = OpenAI(api_key=config.OPENAI_API_KEY, organization=config.OPENAI_ORG)
         self.docs: List[Doc] = []
         self.add_notion_pages()
 
@@ -49,18 +54,18 @@ class Retriever:
         for i in np.argsort(similarities)[::-1]:
             doc = self.docs[i]
             token_count += doc.token_count
-            if token_count > Config.query_token_limit:
+            if token_count > self.config.query_token_limit:
                 break
             selected_strings.append(str(doc))
 
         return selected_strings
 
     def add_notion_pages(self):
-        notion = Notion()
+        notion = Notion(self.config)
         for page in notion.pages.values():
             if not str(page).strip():
                 continue
-            doc = Doc(content=str(page), source=page.url)
+            doc = Doc(content=str(page), source=page.url, config=self.config)
             self.docs.append(doc)
         self.add_embeddings_to_docs()
 
@@ -75,28 +80,27 @@ class Retriever:
 
         # add embeddings to docs
         for doc in self.docs:
-            doc.embedding = embeddings_cache[doc.content_hash]
+            doc.set_embedding(embeddings_cache[doc.content_hash])
 
     def fetch_embedding(self, text: str):
         text = text.replace("\n", " ").strip()
-        return self.openai_client.embeddings.create(input=[text], model=Config.embeddings_model).data[0].embedding
+        return self.openai_client.embeddings.create(input=[text], model=self.config.embeddings_model).data[0].embedding
 
-    @staticmethod
-    def save_embeddings_cache(cache: Dict[str, List[float]]):
-        os.makedirs(Config.data_dir, exist_ok=True)
-        with open(Config.embeddings_cache_file, 'w') as f:
+    def save_embeddings_cache(self, cache: Dict[str, List[float]]):
+        os.makedirs(self.config.data_dir, exist_ok=True)
+        with open(self.config.embeddings_cache_path, 'w') as f:
             json.dump(cache, f)
 
-    @staticmethod
-    def load_embeddings_cache() -> Dict[str, List[float]]:
-        if os.path.exists(Config.embeddings_cache_file):
-            with open(Config.embeddings_cache_file) as json_file:
+    def load_embeddings_cache(self) -> Dict[str, List[float]]:
+        if os.path.exists(self.config.embeddings_cache_path):
+            with open(self.config.embeddings_cache_path) as json_file:
                 return json.load(json_file)
         return dict()
 
 
 def test():
-    retriever = Retriever()
+    config = Config()
+    retriever = Retriever(config)
     docs = retriever('What resources do we have for LLama?')
     for doc in docs:
         print(doc)
