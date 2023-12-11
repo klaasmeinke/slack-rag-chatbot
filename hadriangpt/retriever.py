@@ -82,7 +82,7 @@ class Retriever:
             doc.embedding = self.embeddings_cache[doc.content_hash]
 
     def fetch_embedding(self, text: str):
-        text = text.replace("\n", " ")
+        text = text.replace("\n", " ").strip()
         return self.openai_client.embeddings.create(input=[text], model=Config.embeddings_model).data[0].embedding
 
     def save_embeddings_cache(self):
