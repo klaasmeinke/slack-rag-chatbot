@@ -74,10 +74,10 @@ from hadriangpt.config import Config
 
 def parse_cli_args():
     parser = argparse.ArgumentParser()
-    _config = Config()
-    for arg, default_value in vars(_config).items():
-        arg_type = type(default_value) if default_value is not None else str
-        parser.add_argument(f"--{arg}", type=arg_type, default=default_value, help=_config.help_message(arg))
+    _config = Config(validate=False)
+    for arg, val in vars(_config).items():
+        arg_type = type(val) if val is not None else str
+        parser.add_argument(f"--{arg}", type=arg_type, help=_config.help_message(arg))
     return parser.parse_args()
 
 
@@ -85,7 +85,6 @@ def chat():
     """Chat with bot from cli."""
     args = parse_cli_args()
     config = Config(args)
-
     bot = Bot(config)
 
     while True:

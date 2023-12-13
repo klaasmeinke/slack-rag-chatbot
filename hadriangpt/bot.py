@@ -20,6 +20,7 @@ class Bot:
 
         completion = self.openai_client.chat.completions.create(
             model=self.config.chat_model,
+            temperature=self.config.model_temperature,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": query}

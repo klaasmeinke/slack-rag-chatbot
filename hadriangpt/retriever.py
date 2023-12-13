@@ -1,37 +1,12 @@
-from functools import cached_property
+from hadriangpt.docs import Doc
 from hadriangpt.config import Config
-import hashlib
 import json
 import numpy as np
-import tiktoken
 from tqdm import tqdm
 from typing import Dict, List
 from openai import OpenAI
 import os
 from hadriangpt.notion import Notion
-
-
-class Doc:
-    def __init__(self, content: str, source: str, config: Config):
-        self.content = content
-        self.source = source
-        self.config = config
-        self.embedding: List[float] | None = None
-
-    def __str__(self):
-        return self.content
-
-    def set_embedding(self, embedding: List[float]):
-        self.embedding = embedding
-
-    @cached_property
-    def content_hash(self):
-        return hashlib.sha256(self.content.encode()).hexdigest()
-
-    @cached_property
-    def token_count(self):
-        encoding = tiktoken.encoding_for_model(self.config.chat_model)
-        return len(encoding.encode(self.content))
 
 
 class Retriever:
@@ -65,8 +40,7 @@ class Retriever:
         for page in notion.pages.values():
             if not str(page).strip():
                 continue
-            doc = Doc(content=str(page), source=page.url, config=self.config)
-            self.docs.append(doc)
+            self.docs += Doc.create_docs(header=page.header, body=page.content, source=page.url, config=self.config)
         self.add_embeddings_to_docs()
 
     def add_embeddings_to_docs(self):
@@ -87,13 +61,16 @@ class Retriever:
         return self.openai_client.embeddings.create(input=[text], model=self.config.embeddings_model).data[0].embedding
 
     def save_embeddings_cache(self, cache: Dict[str, List[float]]):
-        os.makedirs(self.config.data_dir, exist_ok=True)
-        with open(self.config.embeddings_cache_path, 'w') as f:
+        directory = os.path.dirname(self.config.embeddings_cache_file)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+
+        with open(self.config.embeddings_cache_file, 'w') as f:
             json.dump(cache, f)
 
     def load_embeddings_cache(self) -> Dict[str, List[float]]:
-        if os.path.exists(self.config.embeddings_cache_path):
-            with open(self.config.embeddings_cache_path) as json_file:
+        if os.path.exists(self.config.embeddings_cache_file):
+            with open(self.config.embeddings_cache_file) as json_file:
                 return json.load(json_file)
         return dict()
 
