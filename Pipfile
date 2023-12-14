@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+fastapi = "*"
 pydantic = "==2.5.2"
 notion-client = "==2.1.0"
 openai = "==1.3.5"
@@ -14,6 +15,7 @@ flask = "*"
 requests = "*"
 tqdm = "*"
 numpy = "*"
+uvicorn = "*"
 
 [dev-packages]
 

@@ -40,7 +40,7 @@ class Retriever:
         for page in notion.pages.values():
             if not str(page).strip():
                 continue
-            self.docs += Doc.create_docs(header=page.header, body=page.content, source=page.url, config=self.config)
+            self.docs += Doc.create_docs(header=page.header, body=page.body, source=page.url, config=self.config)
         self.add_embeddings_to_docs()
 
     def add_embeddings_to_docs(self):
@@ -49,7 +49,7 @@ class Retriever:
         for doc in tqdm(docs_without_embeddings, desc='Fetching Embeddings', disable=not docs_without_embeddings):
             if doc.content_hash in embeddings_cache:
                 continue
-            embeddings_cache[doc.content_hash] = self.fetch_embedding(doc.content)
+            embeddings_cache[doc.content_hash] = self.fetch_embedding(doc.body)
             self.save_embeddings_cache(embeddings_cache)
 
         # add embeddings to docs

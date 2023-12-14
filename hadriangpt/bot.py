@@ -16,8 +16,6 @@ class Bot:
         doc_string = '\n\n'.join(docs)
         system_prompt = self.system_prompt.replace('{docs}', doc_string)
 
-        print(system_prompt)
-
         completion = self.openai_client.chat.completions.create(
             model=self.config.chat_model,
             temperature=self.config.model_temperature,

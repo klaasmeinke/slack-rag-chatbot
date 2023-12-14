@@ -4,12 +4,8 @@ import json
 from notion_client import Client
 from hadriangpt.notion_page import Page
 import os
-from ratemate import RateLimit  # type: ignore
 from tqdm import tqdm
 from typing import Dict, List
-
-
-rate_limit = RateLimit(max_count=3, per=1, greedy=True)
 
 
 class Notion:

@@ -3,6 +3,8 @@ from notion_client import Client
 from ratemate import RateLimit  # type: ignore
 from typing import Dict
 
+rate_limit = RateLimit(max_count=3, per=1, greedy=True)
+
 
 class Page:
 
@@ -14,14 +16,14 @@ class Page:
         last_scraped: datetime = datetime.min
     ):
         self.url = url
-        self.header = header
-        self.content = body
+        self.header = header.strip()
+        self.body = body.strip()
         self.last_scraped = last_scraped
         self.last_edited = last_edited
         self._depth: int = 0
 
     def __str__(self):
-        return self.header + self.content
+        return self.header + '\n' + self.body
 
     @property
     def is_scraped(self):
@@ -43,7 +45,7 @@ class Page:
         for block in children:
             formatted_block = self.format_block(block)
             if formatted_block:
-                self.content += formatted_block.replace('\n', '\n'+self._depth*'  ')
+                self.body += formatted_block.replace('\n', '\n' + self._depth * '  ')
             if block['has_children'] and block['type'] != 'child_page':
                 self._depth += 1
                 self.scrape_block(client, block_id=block['id'])
@@ -102,7 +104,7 @@ class Page:
         return {
             'url': self.url,
             'header': self.header,
-            'content': self.content,
+            'content': self.body,
             'last_edited': self.last_edited.isoformat(),
             'last_scraped': self.last_scraped.isoformat(),
         }
@@ -124,4 +126,4 @@ class Page:
 
         if page.last_scraped > self.last_scraped:
             self.last_scraped = page.last_scraped
-            self.content = page.content
+            self.body = page.body
