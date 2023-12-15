@@ -59,7 +59,7 @@ class Config:
             'OPENAI_ORG': 'Organization ID for OpenAI.',
             'OPENAI_API_KEY': 'API key for OpenAI services.',
             'SLACK_TOKEN': 'Token for Slack bot integration',
-            'SLACK_SIGNING_SECRET': 'Signing secret for Slack app.',
+            'SLACK_SIGNING_SECRET': 'Signing secret for Slack notion_slack_chat.',
             'data_refresh_minutes': 'Interval in minutes for data refresh (scraping notion, slack etc.).',
             'doc_token_overlap': 'Number of overlapping tokens in retriever documents.',
             'doc_token_limit': 'Limit for the number of tokens in one retriever document.',

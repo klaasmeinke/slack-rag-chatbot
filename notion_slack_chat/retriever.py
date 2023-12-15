@@ -1,12 +1,12 @@
-from app.docs import Doc
-from app.config import Config
+from notion_slack_chat.docs import Doc
+from notion_slack_chat.config import Config
 import json
 import numpy as np
 from tqdm import tqdm
 from typing import Dict, List
 from openai import OpenAI
 import os
-from app.notion import Notion
+from notion_slack_chat.notion import Notion
 
 
 class Retriever:

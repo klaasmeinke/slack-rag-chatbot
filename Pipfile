@@ -24,9 +24,7 @@ uvicorn = "*"
 python_version = "3.11"
 
 [scripts]
-app = 'python -m hadriangpt'
-notion = 'python -m hadriangpt.notion'
-bot = 'python -m hadriangpt.bot'
-retrieve = 'python -m hadriangpt.retriever'
-build-docker = "docker build -t hadrian-gpt-slackbot ."
-run-slack-bot = "flask run --port 8000"
+app = 'python -m notion_slack_chat'
+notion = 'python -m notion_slack_chat.notion'
+bot = 'python -m notion_slack_chat.bot'
+retrieve = 'python -m notion_slack_chat.retriever'

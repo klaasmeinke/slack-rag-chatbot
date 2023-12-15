@@ -1,10 +1,10 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 import argparse
-from app.bot import Bot
-from app.config import Config
-from app.notion import Notion
-from app.retriever import Retriever
+from notion_slack_chat.bot import Bot
+from notion_slack_chat.config import Config
+from notion_slack_chat.notion import Notion
+from notion_slack_chat.retriever import Retriever
 from fastapi import FastAPI, Request
 from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler

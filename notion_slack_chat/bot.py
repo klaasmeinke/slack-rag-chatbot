@@ -1,5 +1,5 @@
-from app.config import Config
-from app.retriever import Retriever
+from notion_slack_chat.config import Config
+from notion_slack_chat.retriever import Retriever
 from openai import OpenAI
 from typing import Dict, List
 
