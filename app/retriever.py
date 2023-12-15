@@ -1,12 +1,12 @@
-from hadriangpt.docs import Doc
-from hadriangpt.config import Config
+from app.docs import Doc
+from app.config import Config
 import json
 import numpy as np
 from tqdm import tqdm
 from typing import Dict, List
 from openai import OpenAI
 import os
-from hadriangpt.notion import Notion
+from app.notion import Notion
 
 
 class Retriever:

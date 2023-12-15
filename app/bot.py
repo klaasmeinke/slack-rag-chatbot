@@ -1,5 +1,5 @@
-from hadriangpt.config import Config
-from hadriangpt.retriever import Retriever
+from app.config import Config
+from app.retriever import Retriever
 from openai import OpenAI
 from typing import Dict, List
 

@@ -1,5 +1,5 @@
 from functools import cached_property
-from hadriangpt.config import Config
+from app.config import Config
 import hashlib
 import tiktoken
 from typing import List

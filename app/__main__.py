@@ -1,10 +1,10 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 import argparse
-from hadriangpt.bot import Bot
-from hadriangpt.config import Config
-from hadriangpt.notion import Notion
-from hadriangpt.retriever import Retriever
+from app.bot import Bot
+from app.config import Config
+from app.notion import Notion
+from app.retriever import Retriever
 from fastapi import FastAPI, Request
 from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler

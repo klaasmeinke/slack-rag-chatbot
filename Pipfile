@@ -24,7 +24,7 @@ uvicorn = "*"
 python_version = "3.11"
 
 [scripts]
-app = 'python -m hadriangpt.app'
+app = 'python -m hadriangpt'
 notion = 'python -m hadriangpt.notion'
 bot = 'python -m hadriangpt.bot'
 retrieve = 'python -m hadriangpt.retriever'

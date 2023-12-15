@@ -1,8 +1,8 @@
 from datetime import datetime
-from hadriangpt.config import Config
+from app.config import Config
 import json
 from notion_client import Client
-from hadriangpt.notion_page import Page
+from app.notion_page import Page
 import os
 from tqdm import tqdm
 from typing import Dict, List
@@ -13,8 +13,8 @@ class Notion:
         self.config = config
         self.client = Client(auth=config.NOTION_API_KEY)
         self.pages: Dict[str, Page] = dict()
-        if not os.path.exists(config.notion_data_file) and not (fetch_pages and scrape_pages):
-            err = f'notion data file {config.notion_data_file} must exist when not fetching or creating notion pages.'
+        if not os.path.exists(config.file_notion) and not (fetch_pages and scrape_pages):
+            err = f'notion data file {config.file_notion} must exist when not fetching or creating notion pages.'
             raise ValueError(err)
         self.load_from_data()
 
@@ -132,18 +132,18 @@ class Notion:
         return str(_child).strip()
 
     def save_data(self):
-        directory = os.path.dirname(self.config.notion_data_file)
+        directory = os.path.dirname(self.config.file_notion)
         if directory:
             os.makedirs(directory, exist_ok=True)
 
         data = [p.save_to_dict() for p in self.pages.values()]
-        with open(self.config.notion_data_file, 'w') as f:
+        with open(self.config.file_notion, 'w') as f:
             json.dump(data, f)
 
     def load_from_data(self):
-        if not os.path.exists(self.config.notion_data_file):
+        if not os.path.exists(self.config.file_notion):
             return
-        with open(self.config.notion_data_file) as json_file:
+        with open(self.config.file_notion) as json_file:
             data: List[Dict[str, str]] = json.load(json_file)
         for page_data in data:
             page = Page.load_from_dict(page_data)
