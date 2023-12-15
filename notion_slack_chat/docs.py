@@ -45,7 +45,7 @@ class Doc:
         segments = ['...' + seg for i, seg in enumerate(segments) if i != 0]
         segments = [seg + '...' for i, seg in enumerate(segments) if i + 1 != len(segments)]
 
-        return [cls(content=header + '\n' + seg, config=config) for seg in segments]
+        return [cls(content=source + '\n' + header + '\n' + seg, config=config) for seg in segments]
 
     def set_embedding(self, embedding: List[float]):
         self.embedding = embedding
