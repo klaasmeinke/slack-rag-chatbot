@@ -31,7 +31,7 @@ class Retriever:
         for i in np.argsort(similarities)[::-1]:
             doc = self.docs[i]
             token_count += doc.token_count
-            if token_count > self.config.query_token_limit:
+            if token_count > self.config.openai_token_limit:
                 break
             selected_strings.append(str(doc))
 
@@ -64,19 +64,19 @@ class Retriever:
 
     def fetch_embedding(self, text: str):
         text = text.replace("\n", " ").strip()
-        return self.openai_client.embeddings.create(input=[text], model=self.config.embeddings_model).data[0].embedding
+        return self.openai_client.embeddings.create(input=[text], model=self.config.model_embeddings).data[0].embedding
 
     def save_embeddings_cache(self, cache: Dict[str, List[float]]):
-        directory = os.path.dirname(self.config.embeddings_cache_file)
+        directory = os.path.dirname(self.config.file_embeddings)
         if directory:
             os.makedirs(directory, exist_ok=True)
 
-        with open(self.config.embeddings_cache_file, 'w') as f:
+        with open(self.config.file_embeddings, 'w') as f:
             json.dump(cache, f)
 
     def load_embeddings_cache(self) -> Dict[str, List[float]]:
-        if os.path.exists(self.config.embeddings_cache_file):
-            with open(self.config.embeddings_cache_file) as json_file:
+        if os.path.exists(self.config.file_embeddings):
+            with open(self.config.file_embeddings) as json_file:
                 return json.load(json_file)
         return dict()
 

@@ -21,20 +21,20 @@ class Doc:
 
     @cached_property
     def token_count(self):
-        return self.count_tokens(self.content, self.config.chat_model)
+        return self.count_tokens(self.content, self.config.model_chat)
 
     @classmethod
     def create_docs(cls, header: str, body: str, source: str, config: Config) -> List['Doc']:
         header, body = header.strip(), body.strip()
-        header_tokens = cls.count_tokens(header, config.chat_model)
-        body_tokens = cls.count_tokens(body, config.chat_model)
-        if header_tokens + body_tokens <= config.max_doc_tokens:
+        header_tokens = cls.count_tokens(header, config.model_chat)
+        body_tokens = cls.count_tokens(body, config.model_chat)
+        if header_tokens + body_tokens <= config.doc_token_limit:
             return [cls(content=source + '\n' + header + '\n' + body, config=config)]
 
-        encoding = tiktoken.encoding_for_model(config.chat_model)
+        encoding = tiktoken.encoding_for_model(config.model_chat)
         body_tokens = encoding.encode(body)
 
-        max_body_tokens = config.max_doc_tokens - header_tokens
+        max_body_tokens = config.doc_token_limit - header_tokens
         segments = []
         start_idx, end_idx = 0, 0
         while end_idx < len(body_tokens):

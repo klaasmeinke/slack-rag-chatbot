@@ -37,7 +37,7 @@ def refresh_data():
 
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=refresh_data, trigger="interval", minutes=config.notion_refresh_minutes)
+scheduler.add_job(func=refresh_data, trigger="interval", minutes=config.data_refresh_minutes)
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown())
 

@@ -9,7 +9,7 @@ class Bot:
         self.retriever = Retriever(config)
         self.openai_client = OpenAI(api_key=config.OPENAI_API_KEY, organization=config.OPENAI_ORG)
         self.config = config
-        with open(config.system_prompt_file) as f:
+        with open(config.file_system_prompt) as f:
             self.system_prompt = f.read()
 
     def __call__(self, query: str, history: List[Dict[str, str]] = None):
@@ -23,7 +23,7 @@ class Bot:
         messages += [{"role": "user", "content": query}]
 
         completion = self.openai_client.chat.completions.create(
-            model=self.config.chat_model,
+            model=self.config.model_chat,
             temperature=self.config.model_temperature,
             messages=messages
         )
