@@ -1,6 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
-import atexit
 import argparse
+import atexit
+from collections import defaultdict
 from notion_slack_chat.bot import Bot
 from notion_slack_chat.config import Config
 from notion_slack_chat.notion import Notion
@@ -42,7 +43,7 @@ scheduler.start()
 atexit.register(lambda: scheduler.shutdown())
 
 
-history: Dict[str, List[Dict[str, str]]] = dict()
+history: Dict[str, List[Dict[str, str]]] = defaultdict(list)
 
 
 @slack_app.message(".*")
@@ -50,11 +51,7 @@ def message_handler(message, say):
     prompt = message['text']
     user_id = message['user']
 
-    if user_id not in history:
-        history[user_id] = [{'role': 'user', 'content': prompt}]
-    else:
-        history[user_id].append({'role': 'user', 'content': prompt})
-
+    history[user_id].append({'role': 'user', 'content': prompt})
     response = bot(prompt, history=history[user_id])
     history[user_id].append({'role': 'assistant', 'content': response})
 
