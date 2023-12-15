@@ -17,6 +17,8 @@ class Retriever:
         self.add_notion_pages()
 
     def __call__(self, query: str) -> List[str]:
+        self.add_notion_pages()
+
         query_embedding = self.fetch_embedding(query)
         query_vector = np.asarray(query_embedding)
         query_vector_norm = query_embedding / np.linalg.norm(query_vector)
@@ -37,10 +39,14 @@ class Retriever:
 
     def add_notion_pages(self):
         notion = Notion(self.config)
+
+        refreshed_docs = []
         for page in notion.pages.values():
             if not str(page).strip():
                 continue
-            self.docs += Doc.create_docs(header=page.header, body=page.body, source=page.url, config=self.config)
+            refreshed_docs += Doc.create_docs(header=page.header, body=page.body, source=page.url, config=self.config)
+        self.docs = refreshed_docs
+
         self.add_embeddings_to_docs()
 
     def add_embeddings_to_docs(self):
@@ -49,7 +55,7 @@ class Retriever:
         for doc in tqdm(docs_without_embeddings, desc='Fetching Embeddings', disable=not docs_without_embeddings):
             if doc.content_hash in embeddings_cache:
                 continue
-            embeddings_cache[doc.content_hash] = self.fetch_embedding(doc.body)
+            embeddings_cache[doc.content_hash] = self.fetch_embedding(doc.content)
             self.save_embeddings_cache(embeddings_cache)
 
         # add embeddings to docs

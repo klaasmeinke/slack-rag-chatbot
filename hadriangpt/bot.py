@@ -1,6 +1,7 @@
 from hadriangpt.config import Config
 from hadriangpt.retriever import Retriever
 from openai import OpenAI
+from typing import Dict, List
 
 
 class Bot:
@@ -11,19 +12,22 @@ class Bot:
         with open(config.system_prompt_file) as f:
             self.system_prompt = f.read()
 
-    def __call__(self, query: str):
+    def __call__(self, query: str, history: List[Dict[str, str]] = None):
         docs = self.retriever(query)
         doc_string = '\n\n'.join(docs)
         system_prompt = self.system_prompt.replace('{docs}', doc_string)
 
+        messages = [{"role": "system", "content": system_prompt}]
+        if history:
+            messages += history[-5:]
+        messages += [{"role": "user", "content": query}]
+
         completion = self.openai_client.chat.completions.create(
             model=self.config.chat_model,
             temperature=self.config.model_temperature,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": query}
-            ]
+            messages=messages
         )
+
         return completion.choices[0].message.content
 
 

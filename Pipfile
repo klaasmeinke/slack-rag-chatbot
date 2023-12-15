@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+apscheduler = "*"
 fastapi = "*"
 pydantic = "==2.5.2"
 notion-client = "==2.1.0"

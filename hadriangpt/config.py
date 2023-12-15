@@ -23,6 +23,7 @@ class Config:
         self.system_prompt_file = 'resources/system_prompt.txt'
         self.max_doc_tokens = 500
         self.doc_token_overlap = 50
+        self.notion_refresh_minutes = 60
 
         # override defaults with env variables and cli args
         self.load_env_config()
@@ -48,6 +49,11 @@ class Config:
         none_attrs = [attr for attr in vars(self) if getattr(self, attr) is None]
         if none_attrs:
             raise ValueError(f'{none_attrs} should be defined in environmental variables or command line arguments.')
+
+        if self.notion_refresh_minutes < 5:
+            raise ValueError(
+                f'notion_refresh_minutes ({self.notion_refresh_minutes}) should be greater than or equal to 5.'
+            )
 
     def help_message(self, config_value: str):
         mapping = {
