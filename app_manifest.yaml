@@ -1,0 +1,30 @@
+display_information:
+  name: SmartSearch
+  description: Intelligently Search Your Knowledge Bases
+  background_color: "#005694"
+  long_description: "SmartSearch has access to your Notion documents and public Slack channels. Have a question? Just go to the app's main page and send a message.                                  "
+features:
+  app_home:
+    home_tab_enabled: false
+    messages_tab_enabled: true
+    messages_tab_read_only_enabled: false
+  bot_user:
+    display_name: SmartSearch
+    always_online: true
+oauth_config:
+  scopes:
+    bot:
+      - channels:history
+      - channels:join
+      - channels:read
+      - im:history
+      - im:read
+      - im:write
+settings:
+  event_subscriptions:
+    request_url: https://put-your-domain-here/slack/events
+    bot_events:
+      - message.im
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
