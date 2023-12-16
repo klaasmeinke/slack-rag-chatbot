@@ -1,8 +1,8 @@
 from datetime import datetime
-from notion_slack_chat.config import Config
+from smartsearch.config import Config
 import json
 from notion_client import Client
-from notion_slack_chat.notion_page import Page
+from smartsearch.notion_page import Page
 import os
 from tqdm import tqdm
 from typing import Dict, List

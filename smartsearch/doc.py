@@ -1,5 +1,5 @@
 from functools import cached_property
-from notion_slack_chat.config import Config
+from smartsearch.config import Config
 import hashlib
 import tiktoken
 from typing import List

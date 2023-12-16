@@ -2,10 +2,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import argparse
 import atexit
 from collections import defaultdict
-from notion_slack_chat.bot import Bot
-from notion_slack_chat.config import Config
-from notion_slack_chat.notion import Notion
-from notion_slack_chat.retriever import Retriever
+from smartsearch.bot import Bot
+from smartsearch.config import Config
+from smartsearch.notion import Notion
+from smartsearch.retriever import Retriever
 from fastapi import FastAPI, Request
 from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler
@@ -52,7 +52,7 @@ def message_handler(message, say):
     user_id = message['user']
 
     history[user_id].append({'role': 'user', 'content': prompt})
-    response = bot(prompt, history=history[user_id])
+    response = bot(history=history[user_id])
     history[user_id].append({'role': 'assistant', 'content': response})
 
     say(response)
