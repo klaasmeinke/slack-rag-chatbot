@@ -30,7 +30,7 @@ class Config:
 
         # override defaults with env variables and cli args
         self.load_env_config()
-        self.load_cli_config(args)
+        self.load_cli_args()
 
         # validate that all variables are set
         if validate:
@@ -45,16 +45,20 @@ class Config:
         assert self.interface in interface_map, f'interface input {self.interface} must be in {list(interface_map)}'
         return interface_map[self.interface](self)
 
+    def load_cli_args(self):
+        parser = argparse.ArgumentParser()
+        for arg, val in vars(self).items():
+            arg_type = type(val) if val is not None else str
+            parser.add_argument(f"--{arg}", type=arg_type, help=self.help_message(arg))
+
+        args = parser.parse_args()
+        for key, value in vars(args).items():
+            if hasattr(self, key) and value is not None:
+                setattr(self, key, value)
+
     def load_env_config(self):
         for key, value in os.environ.items():
             if hasattr(self, key):
-                setattr(self, key, value)
-
-    def load_cli_config(self, args: argparse.Namespace | None):
-        if args is None:
-            return
-        for key, value in vars(args).items():
-            if hasattr(self, key) and value is not None:
                 setattr(self, key, value)
 
     def validate_config(self):

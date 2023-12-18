@@ -53,6 +53,12 @@ class DocSelector:
             embedding = embeddings_cache.get(doc.content_hash)
             doc.set_embedding(embedding)
 
+    def refresh_data(self):
+        _retriever = Retriever(self.config)
+        _retriever.fetch_docs()
+        _retriever.scrape_docs()
+        self.fetch_doc_embeddings()
+
     def fetch_doc_embeddings(self):
         self.retrieve_docs()
         embeddings_cache = self.load_embeddings_cache()
