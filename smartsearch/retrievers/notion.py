@@ -1,5 +1,5 @@
 from datetime import datetime
-from smartsearch.retrievers.docs import Doc
+from smartsearch.retrievers.doc import Doc
 from notion_client import Client
 from smartsearch.retrievers.retrieverabc import RetrieverABC
 from ratemate import RateLimit  # type: ignore
@@ -14,7 +14,7 @@ rate_limit = RateLimit(max_count=3, per=1, greedy=True)
 
 class NotionPage(Doc):
 
-    def scrape(self, client: Client):
+    def scrape_doc(self, client: Client):
         if self.is_scraped:
             return
         self.last_scraped = datetime.now()

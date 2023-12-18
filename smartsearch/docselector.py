@@ -18,8 +18,6 @@ class DocSelector:
         self.retrieve_docs()
 
     def __call__(self, query: str) -> List[Doc]:
-        self.retrieve_docs()
-
         query_embedding = self.fetch_embedding(query)
         query_vector = np.asarray(query_embedding)
         query_vector_norm = query_embedding / np.linalg.norm(query_vector)
@@ -54,10 +52,11 @@ class DocSelector:
             doc.set_embedding(embedding)
 
     def refresh_data(self):
-        _retriever = Retriever(self.config)
-        _retriever.fetch_docs()
-        _retriever.scrape_docs()
+        retriever = Retriever(self.config)
+        retriever.fetch_docs()
+        retriever.scrape_docs()
         self.fetch_doc_embeddings()
+        self.retrieve_docs()
 
     def fetch_doc_embeddings(self):
         self.retrieve_docs()
@@ -83,10 +82,10 @@ class DocSelector:
             json.dump(cache, f)
 
     def load_embeddings_cache(self) -> Dict[str, List[float]]:
-        if os.path.exists(self.config.file_embeddings):
-            with open(self.config.file_embeddings) as json_file:
-                return json.load(json_file)
-        return dict()
+        if not os.path.exists(self.config.file_embeddings):
+            return dict()
+        with open(self.config.file_embeddings) as json_file:
+            return json.load(json_file)
 
 
 def test():

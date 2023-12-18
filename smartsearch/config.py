@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 class Config:
-    def __init__(self, args: argparse.Namespace | None = None, validate: bool = True):
+    def __init__(self):
 
         self.NOTION_API_KEY = None
         self.OPENAI_ORG = None
@@ -33,17 +33,19 @@ class Config:
         self.load_cli_args()
 
         # validate that all variables are set
-        if validate:
-            self.validate_config()
+        self.validate_config()
 
-    def get_interface(self) -> 'Interface':
-        self.interface = self.interface.lower().strip()
-        interface_map = {
+    @property
+    def interface_map(self):
+        return {
             'cli': CliInterface,
             'slack': SlackInterface,
         }
-        assert self.interface in interface_map, f'interface input {self.interface} must be in {list(interface_map)}'
-        return interface_map[self.interface](self)
+
+    def get_interface(self) -> 'Interface':
+        self.interface = self.interface.lower().strip()
+        assert self.interface in self.interface_map, f'interface {self.interface} must be in {list(self.interface_map)}'
+        return self.interface_map[self.interface](self)
 
     def load_cli_args(self):
         parser = argparse.ArgumentParser()
@@ -78,11 +80,12 @@ class Config:
             'NOTION_API_KEY': 'API key for Notion integration.',
             'OPENAI_ORG': 'Organization ID for OpenAI.',
             'OPENAI_API_KEY': 'API key for OpenAI services.',
-            'SLACK_TOKEN': 'Token for Slack bot integration',
+            'SLACK_TOKEN': 'Token for Slack bot integration.',
             'SLACK_SIGNING_SECRET': 'Signing secret for Slack smartsearch.',
-            'data_refresh_minutes': 'Interval in minutes for data refresh (retrievers notion, slack etc.).',
+            'data_refresh_minutes': 'Interval in minutes for data refresh.',
             'doc_token_overlap': 'Number of overlapping tokens in retriever documents.',
             'doc_token_limit': 'Limit for the number of tokens in one retriever document.',
+            'interface': f'How to interact with the bot. Options: {list(self.interface_map)}',
             'file_embeddings': 'File path for storing embeddings data.',
             'file_notion': 'File path for storing Notion data.',
             'file_system_prompt': 'File path for the system prompt text',
@@ -90,7 +93,7 @@ class Config:
             'model_embeddings': 'Model identifier for the OpenAI embeddings model.',
             'model_temperature': 'Temperature setting for the chat model.',
             'port': 'Port on which the application runs.',
-            'openai_token_limit': 'Token limit for OpenAI API chat requests.',
+            'openai_token_limit': 'Token limit for all docs in system prompt.',
         }
 
         message = mapping.get(config_value, f'set {config_value}')

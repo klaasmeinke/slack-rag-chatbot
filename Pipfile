@@ -22,6 +22,7 @@ uvicorn = "==0.24.0.post1"
 python_version = "3.11"
 
 [scripts]
+interface = 'python -m smartsearch.chat_interfaces.interface'
 main = 'python -m smartsearch'
 notion = 'python -m smartsearch.retrievers.notion'
 docselector = 'python -m smartsearch.docselector'

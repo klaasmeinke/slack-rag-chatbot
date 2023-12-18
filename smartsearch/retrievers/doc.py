@@ -31,6 +31,20 @@ class Doc(ABC):
     def __str__(self):
         return '\n'.join([self.url, self.header, self.body])
 
+    def scrape(self, **kwargs):
+        if self.is_scraped:
+            return
+        self.last_scraped = datetime.now()
+        self.scrape_doc(**kwargs)
+
+    @abstractmethod
+    def scrape_doc(self, **kwargs):
+        """scrape the doc and add info to self.body"""
+
+    @property
+    def is_scraped(self):
+        return self.last_scraped >= self.last_edited
+
     @staticmethod
     def count_tokens(text: str, model: str):
         encoding = tiktoken.encoding_for_model(model)
@@ -93,14 +107,6 @@ class Doc(ABC):
     def content_hash(self):
         content = '\n'.join([self.header, self.body])
         return hashlib.sha256(content.encode()).hexdigest()
-
-    @property
-    def is_scraped(self):
-        return self.last_scraped >= self.last_edited
-
-    @abstractmethod
-    def scrape(self, client):
-        """scrape the doc and add info to self.body"""
 
     def save_to_dict(self) -> Dict[str, str]:
         return {

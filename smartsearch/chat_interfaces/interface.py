@@ -19,10 +19,14 @@ class Interface(ABC):
 
     @abstractmethod
     def __call__(self):
-        """ accept user prompts and send responses """
+        """accept user prompts and send responses."""
+
+    def refresh_data(self):
+        self.doc_selector.refresh_data()
 
     def get_response(self, prompt: str, user_id: str) -> str:
         self.history[user_id].append({'role': 'user', 'content': prompt})
+
         docs = self.doc_selector(prompt)
         docs_string = '\n\n'.join([str(doc) for doc in docs])
         system_prompt = self.system_prompt.replace('{docs}', docs_string)
@@ -33,6 +37,35 @@ class Interface(ABC):
             messages=[{"role": "system", "content": system_prompt}] + self.history[user_id][-5:]
         )
         response = completion.choices[0].message.content
+
         self.history[user_id].append({'role': 'assistant', 'content': response})
 
         return response
+
+
+def test(prompt: str):
+    from smartsearch.config import Config
+    import cProfile
+    import pstats
+
+    class TestInterface(Interface):
+        def __call__(self):
+            pass
+
+    config = Config()
+    interface = TestInterface(config)
+
+    profiler = cProfile.Profile()
+    profiler.enable()
+
+    response = interface.get_response(prompt, user_id='1')
+
+    profiler.disable()
+    stats = pstats.Stats(profiler).sort_stats('cumulative')
+    stats.print_stats(40)
+
+    print(f'Prompt: {prompt}\nResponse: {response}')
+
+
+if __name__ == "__main__":
+    test('hello')

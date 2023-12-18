@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import json
-from smartsearch.retrievers.docs import Doc
+from smartsearch.retrievers.doc import Doc
 import os
 from tqdm import tqdm
 from typing import Dict, List
@@ -22,12 +22,12 @@ class RetrieverABC(ABC):
 
     @abstractmethod
     def fetch_docs(self):
-        """add docs to self.docs using self.add_doc (without scraping)"""
+        """add docs to self.docs using self.add_doc (without scraping)."""
 
     def scrape_docs(self):
-        unscraped_docs = [doc.url for doc in self.docs.values() if not doc.is_scraped]
-        for url in tqdm(unscraped_docs, desc=type(self).__name__, disable=not unscraped_docs):
-            self.docs[url].scrape(**self.scraping_kwargs)
+        unscraped_docs = [doc for doc in self.docs.values() if not doc.is_scraped]
+        for doc in tqdm(unscraped_docs, desc=type(self).__name__, disable=not unscraped_docs):
+            doc.scrape(**self.scraping_kwargs)
             self.save_data()
 
     def add_doc(self, doc: Doc):
