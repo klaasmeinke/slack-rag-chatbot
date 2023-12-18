@@ -1,66 +1,68 @@
-from smartsearch.doc import Doc
-from smartsearch.config import Config
+from smartsearch.retrievers import Doc, Retriever
 import json
 import numpy as np
 from tqdm import tqdm
-from typing import Dict, List
+from typing import Dict, List, TYPE_CHECKING
 from openai import OpenAI
 import os
-from smartsearch.notion import Notion
+
+if TYPE_CHECKING:
+    from smartsearch.config import Config
 
 
-class Retriever:
-    def __init__(self, config: Config):
+class DocSelector:
+    def __init__(self, config: 'Config'):
         self.config = config
         self.openai_client = OpenAI(api_key=config.OPENAI_API_KEY, organization=config.OPENAI_ORG)
         self.docs: List[Doc] = []
-        self.add_notion_pages()
+        self.retrieve_docs()
 
-    def __call__(self, query: str) -> List[str]:
-        self.add_notion_pages()
+    def __call__(self, query: str) -> List[Doc]:
+        self.retrieve_docs()
 
         query_embedding = self.fetch_embedding(query)
         query_vector = np.asarray(query_embedding)
         query_vector_norm = query_embedding / np.linalg.norm(query_vector)
 
-        embeddings_matrix = np.asarray([doc.embedding for doc in self.docs])
+        assert self.docs, 'no docs retrieved'
+        docs = [doc for doc in self.docs if doc.embedding]
+        assert docs, 'no docs with embeddings retrieved'
+
+        embeddings_matrix = np.asarray([doc.embedding for doc in docs])
         embeddings_matrix_norm = embeddings_matrix / np.linalg.norm(embeddings_matrix, axis=1, keepdims=True)
         similarities = embeddings_matrix_norm.dot(query_vector_norm)
 
-        token_count, selected_strings = 0, []
+        selected_docs = []
+        token_count = 0
+
         for i in np.argsort(similarities)[::-1]:
-            doc = self.docs[i]
-            token_count += doc.token_count
+            doc = docs[i]
+            token_count += doc.token_count(self.config.model_chat)
             if token_count > self.config.openai_token_limit:
                 break
-            selected_strings.append(str(doc))
+            selected_docs.append(doc)
 
-        return selected_strings
+        return selected_docs
 
-    def add_notion_pages(self):
-        notion = Notion(self.config)
+    def retrieve_docs(self):
+        retriever = Retriever(config=self.config)
+        self.docs = retriever.segments
+        embeddings_cache = self.load_embeddings_cache()
 
-        refreshed_docs = []
-        for page in notion.pages.values():
-            if not str(page).strip():
-                continue
-            refreshed_docs += Doc.create_docs(header=page.header, body=page.body, source=page.url, config=self.config)
-        self.docs = refreshed_docs
+        for doc in self.docs:
+            embedding = embeddings_cache.get(doc.content_hash)
+            doc.set_embedding(embedding)
 
-        self.add_embeddings_to_docs()
-
-    def add_embeddings_to_docs(self):
+    def fetch_doc_embeddings(self):
+        self.retrieve_docs()
         embeddings_cache = self.load_embeddings_cache()
         docs_without_embeddings = [doc for doc in self.docs if doc.content_hash not in embeddings_cache]
+
         for doc in tqdm(docs_without_embeddings, desc='Fetching Embeddings', disable=not docs_without_embeddings):
             if doc.content_hash in embeddings_cache:
                 continue
-            embeddings_cache[doc.content_hash] = self.fetch_embedding(doc.content)
+            embeddings_cache[doc.content_hash] = self.fetch_embedding(str(doc))  # batching doesn't work with azure
             self.save_embeddings_cache(embeddings_cache)
-
-        # add embeddings to docs
-        for doc in self.docs:
-            doc.set_embedding(embeddings_cache[doc.content_hash])
 
     def fetch_embedding(self, text: str):
         text = text.replace("\n", " ").strip()
@@ -82,11 +84,14 @@ class Retriever:
 
 
 def test():
+    from smartsearch.config import Config
     config = Config()
-    retriever = Retriever(config)
-    docs = retriever('What resources do we have for LLama?')
-    for doc in docs:
-        print(doc)
+
+    selector = DocSelector(config)
+    selector.fetch_doc_embeddings()
+
+    docs = selector('What resources do we have for LLama?')
+    print('\n\n\n'.join([str(doc) for doc in docs]))
 
 
 if __name__ == "__main__":

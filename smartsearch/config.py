@@ -1,5 +1,9 @@
+from smartsearch.chat_interfaces import CliInterface, SlackInterface
 import argparse
 import os
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from smartsearch.chat_interfaces import Interface
 
 
 class Config:
@@ -14,6 +18,7 @@ class Config:
         self.data_refresh_minutes = 60
         self.doc_token_overlap = 50
         self.doc_token_limit = 500
+        self.interface = 'cli'
         self.file_embeddings = 'data/embeddings.json'
         self.file_notion = 'data/notion.json'
         self.file_system_prompt = 'resources/system_prompt.txt'
@@ -31,6 +36,15 @@ class Config:
         if validate:
             self.validate_config()
 
+    def get_interface(self) -> 'Interface':
+        self.interface = self.interface.lower().strip()
+        interface_map = {
+            'cli': CliInterface,
+            'slack': SlackInterface,
+        }
+        assert self.interface in interface_map, f'interface input {self.interface} must be in {list(interface_map)}'
+        return interface_map[self.interface](self)
+
     def load_env_config(self):
         for key, value in os.environ.items():
             if hasattr(self, key):
@@ -44,6 +58,8 @@ class Config:
                 setattr(self, key, value)
 
     def validate_config(self):
+        self.get_interface()
+
         none_attrs = [attr for attr in vars(self) if getattr(self, attr) is None]
         if none_attrs:
             raise ValueError(f'{none_attrs} should be defined in environmental variables or command line arguments.')
@@ -60,7 +76,7 @@ class Config:
             'OPENAI_API_KEY': 'API key for OpenAI services.',
             'SLACK_TOKEN': 'Token for Slack bot integration',
             'SLACK_SIGNING_SECRET': 'Signing secret for Slack smartsearch.',
-            'data_refresh_minutes': 'Interval in minutes for data refresh (scraping notion, slack etc.).',
+            'data_refresh_minutes': 'Interval in minutes for data refresh (retrievers notion, slack etc.).',
             'doc_token_overlap': 'Number of overlapping tokens in retriever documents.',
             'doc_token_limit': 'Limit for the number of tokens in one retriever document.',
             'file_embeddings': 'File path for storing embeddings data.',

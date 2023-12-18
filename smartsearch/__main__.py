@@ -1,16 +1,9 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 import argparse
 import atexit
-from collections import defaultdict
-from smartsearch.bot import Bot
 from smartsearch.config import Config
-from smartsearch.notion import Notion
-from smartsearch.retriever import Retriever
-from fastapi import FastAPI, Request
-from slack_bolt import App
-from slack_bolt.adapter.fastapi import SlackRequestHandler
-from typing import Dict, List
-import uvicorn
+from smartsearch.retrievers import Retriever
+from smartsearch.docselector import DocSelector
 
 
 def parse_cli_args():
@@ -24,43 +17,20 @@ def parse_cli_args():
 
 args = parse_cli_args()
 config = Config(args)
-bot = Bot(config)
-
-app = FastAPI()
-slack_app = App(token=config.SLACK_TOKEN, signing_secret=config.SLACK_SIGNING_SECRET)
-handler = SlackRequestHandler(slack_app)
 
 
-# scrape notion and refresh embeddings periodically
 def refresh_data():
-    Notion(config, fetch_pages=True, scrape_pages=True)
-    Retriever(config).add_embeddings_to_docs()
+    retriever = Retriever(config)
+    retriever.fetch_docs()
+    retriever.scrape_docs()
+    DocSelector(config).fetch_doc_embeddings()
 
 
+refresh_data()
 scheduler = BackgroundScheduler()
 scheduler.add_job(func=refresh_data, trigger="interval", minutes=config.data_refresh_minutes)
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown())
 
-
-history: Dict[str, List[Dict[str, str]]] = defaultdict(list)
-
-
-@slack_app.message(".*")
-def message_handler(message, say):
-    prompt = message['text']
-    user_id = message['user']
-
-    history[user_id].append({'role': 'user', 'content': prompt})
-    response = bot(history=history[user_id])
-    history[user_id].append({'role': 'assistant', 'content': response})
-
-    say(response)
-
-
-@app.post("/slack/events")
-async def slack_events(request: Request):
-    return await handler.handle(request)
-
-
-uvicorn.run(app, host="0.0.0.0", port=config.port)
+interface = config.get_interface()
+interface()
