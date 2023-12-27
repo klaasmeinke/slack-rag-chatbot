@@ -21,6 +21,7 @@ class Config:
         self.interface = 'cli'
         self.file_embeddings = 'data/embeddings.json'
         self.file_notion = 'data/notion.json'
+        self.file_slack = 'data/slack.json'
         self.file_system_prompt = 'resources/system_prompt.txt'
         self.model_chat = 'gpt-3.5-turbo-16k'
         self.model_embeddings = 'text-embedding-ada-002'

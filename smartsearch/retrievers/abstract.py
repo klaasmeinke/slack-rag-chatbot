@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 import json
-from smartsearch.retrievers.doc import Doc
+from smartsearch.docs.abstract import Doc
 import os
 from tqdm import tqdm
-from typing import Dict, List
+from typing import Dict, Generator, List
 
 
-class RetrieverABC(ABC):
+class Retriever(ABC):
     def __init__(
             self,
             data_file: str,
@@ -21,8 +21,13 @@ class RetrieverABC(ABC):
         self.load_from_data()
 
     @abstractmethod
+    def docs_generator(self) -> Generator[Doc, None, None]:
+        """fetch all docs that exist for this data source (without scraping)"""
+
     def fetch_docs(self):
-        """add docs to self.docs using self.add_doc (without scraping)."""
+        for doc in self.docs_generator():
+            self.add_doc(doc)
+        self.save_data()
 
     def scrape_docs(self):
         unscraped_docs = [doc for doc in self.docs.values() if not doc.is_scraped]
@@ -42,6 +47,7 @@ class RetrieverABC(ABC):
             os.makedirs(directory, exist_ok=True)
 
         data = [p.save_to_dict() for p in self.docs.values()]
+
         with open(self.data_file, 'w') as f:
             json.dump(data, f)
 

@@ -1,4 +1,5 @@
-from smartsearch.retrievers import Doc, Retriever
+from smartsearch.docs import Doc
+from smartsearch.retrievers import CombinedRetriever
 import json
 import numpy as np
 from tqdm import tqdm
@@ -43,7 +44,8 @@ class DocSelector:
         return selected_docs
 
     def retrieve_docs(self):
-        retriever = Retriever(config=self.config)
+        """read docs and embeddings from files. split the docs and assign embeddings to docs."""
+        retriever = CombinedRetriever(config=self.config)
         self.docs = retriever.segments
         embeddings_cache = self.load_embeddings_cache()
 
@@ -52,7 +54,8 @@ class DocSelector:
             doc.set_embedding(embedding)
 
     def refresh_data(self):
-        retriever = Retriever(self.config)
+        """fetch and scrape docs."""
+        retriever = CombinedRetriever(self.config)
         retriever.fetch_docs()
         retriever.scrape_docs()
         self.fetch_doc_embeddings()

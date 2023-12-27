@@ -1,7 +1,7 @@
-from smartsearch.chat_interfaces.interface import Interface
+from smartsearch.chat_interfaces.abstract import ChatInterface
 
 
-class CliInterface(Interface):
+class CliInterface(ChatInterface):
     def __call__(self):
         while True:
             prompt = input('Prompt: ')

@@ -1,56 +1,33 @@
-from datetime import datetime
-from smartsearch.config import Config
 from slack_sdk import WebClient
-from smartsearch.retrievers import Doc, RetrieverABC
+from smartsearch.retrievers.abstract import Retriever
+from typing import TYPE_CHECKING
+from smartsearch.docs import SlackConvo
 
-config = Config()
-client = WebClient(token=config.SLACK_TOKEN)
-
-
-
-# class SlackConversation(Doc):
+if TYPE_CHECKING:
+    from smartsearch.config import Config
 
 
-channels = client.conversations_list()["channels"]
+class SlackRetriever(Retriever):
 
-for channel in channels:
-    if not channel['is_member']:
-        client.conversations_join(channel=channel['id'])
+    def __init__(self, config: 'Config'):
+        self.client = WebClient(token=config.SLACK_TOKEN)
+        super().__init__(
+            data_file=config.file_slack,
+            doc_type=SlackConvo,
+            scraping_kwargs={'client': self.client}
+        )
 
-conversations = []
+    def docs_generator(self):
+        channels = self.client.conversations_list()["channels"]
 
-for channel in channels:
-    channel_id = channel['id']
-    channel_name = channel['name']
-    messages = client.conversations_history(channel=channel_id)['messages']
+        for channel in channels:
+            if not channel['is_member']:
+                self.client.conversations_join(channel=channel['id'])
 
-    conversation_header = f'Slack conversation in {channel_name} channel'
-    convo = []
+        for channel in channels:
+            channel_id = channel['id']
+            channel_name = channel['name']
+            messages = self.client.conversations_history(channel=channel_id)['messages']
 
-    for message in messages:
-        if 'reply_count' in message:  # is thread
-            conversations.append(convo)
-            convo = [message]
-            for reply in client.conversations_replies(channel=channel_id, ts=message['ts'])['messages'][1:]:
-                convo.append(reply)
-            conversations.append(convo)
-            convo = []
-        else:
-            convo.append(message)
-    conversations.append(convo)
-
-conversations = [c for c in conversations if c]
-
-
-def message_to_text(_message: dict):
-    dt = datetime.utcfromtimestamp(float(message['ts'])).strftime('%Y-%m-%d %H:%M:%S')
-    return f'{_message["user"]} at {dt}: {_message["text"]}'
-
-
-for convo in conversations:
-    print('\n\n\n')
-    for msg in convo:
-        print(message_to_text(msg))
-
-        # for reply in client.conversations_replies(channel=channel_id, ts=message['ts'])['messages'][1:]:
-        #     print(f'\t{reply["text"]}')
+            for message in messages:
+                yield SlackConvo(message=message, channel_id=channel_id, channel_name=channel_name)

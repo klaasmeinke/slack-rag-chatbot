@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from smartsearch.config import Config
 
 
-class Interface(ABC):
+class ChatInterface(ABC):
     def __init__(self, config: 'Config'):
         self.doc_selector = DocSelector(config)
         self.openai_client = OpenAI(api_key=config.OPENAI_API_KEY, organization=config.OPENAI_ORG)
@@ -48,7 +48,7 @@ def test(prompt: str):
     import cProfile
     import pstats
 
-    class TestInterface(Interface):
+    class TestInterface(ChatInterface):
         def __call__(self):
             pass
 

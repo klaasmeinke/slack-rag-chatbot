@@ -3,10 +3,10 @@ from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler
 import uvicorn
 
-from smartsearch.chat_interfaces.interface import Interface
+from smartsearch.chat_interfaces.abstract import ChatInterface
 
 
-class SlackInterface(Interface):
+class SlackInterface(ChatInterface):
     def __call__(self):
         app = FastAPI()
         slack_app = App(token=self.config.SLACK_TOKEN, signing_secret=self.config.SLACK_SIGNING_SECRET)

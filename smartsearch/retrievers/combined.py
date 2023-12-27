@@ -1,16 +1,20 @@
-from smartsearch.retrievers import Doc
-from smartsearch.retrievers import NotionRetriever
-from smartsearch.retrievers import RetrieverABC
+"""This retriever combines the other retrievers into one."""
+
+from smartsearch.docs import Doc
+from smartsearch.retrievers.abstract import Retriever
+from smartsearch.retrievers.notion import NotionRetriever
+from smartsearch.retrievers.slack import SlackRetriever
 from typing import Dict, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from smartsearch.config import Config
 
 
-class Retriever(RetrieverABC):
+class CombinedRetriever(Retriever):
     def __init__(self, config: 'Config'):
         self.config = config
-        self.retrievers = [NotionRetriever(config)]
+        self.retrievers = [SlackRetriever(config)]
+        # self.retrievers = [NotionRetriever(config), SlackRetriever(config)]
 
     @property
     def docs(self) -> Dict[str, 'Doc']:
@@ -26,16 +30,14 @@ class Retriever(RetrieverABC):
         segments = [seg for doc in docs for seg in doc.get_segments(config=self.config)]
         return segments
 
-    def fetch_docs(self):
+    def docs_generator(self):
         for retriever in self.retrievers:
-            retriever.fetch_docs()
+            for doc in retriever.docs_generator():
+                yield doc
 
     def scrape_docs(self):
         for retriever in self.retrievers:
             retriever.scrape_docs()
-
-    def add_doc(self, doc: Doc):
-        raise TypeError('Adding a doc directly to the Retriever class is not supported.')
 
     def save_data(self):
         for retriever in self.retrievers:
