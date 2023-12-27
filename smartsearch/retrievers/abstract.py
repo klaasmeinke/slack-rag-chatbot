@@ -18,18 +18,21 @@ class Retriever(ABC):
         self.scraping_kwargs = scraping_kwargs if scraping_kwargs else dict()
 
         self.docs: Dict[str, doc_type] = dict()
-        self.load_from_data()
+        try:
+            self.load_from_data()
+        except AssertionError as e:
+            print(f'{e} scraping...')
+            self.scrape_docs()
 
     @abstractmethod
-    def docs_generator(self) -> Generator[Doc, None, None]:
+    def _fetch_docs(self) -> Generator[Doc, None, None]:
         """fetch all docs that exist for this data source (without scraping)"""
 
-    def fetch_docs(self):
-        for doc in self.docs_generator():
+    def scrape_docs(self):
+        for doc in self._fetch_docs():
             self.add_doc(doc)
         self.save_data()
 
-    def scrape_docs(self):
         unscraped_docs = [doc for doc in self.docs.values() if not doc.is_scraped]
         for doc in tqdm(unscraped_docs, desc=type(self).__name__, disable=not unscraped_docs):
             doc.scrape(**self.scraping_kwargs)
@@ -52,10 +55,9 @@ class Retriever(ABC):
             json.dump(data, f)
 
     def load_from_data(self):
-        if not os.path.exists(self.data_file):
-            return
+        assert os.path.exists(self.data_file), f'{self.data_file} file does not exist.'
         with open(self.data_file) as json_file:
             data: List[Dict[str, str]] = json.load(json_file)
         for doc_data in data:
-            doc = self.doc_type.load_from_dict(doc_data)
+            doc = self.doc_type(**doc_data)
             self.add_doc(doc)

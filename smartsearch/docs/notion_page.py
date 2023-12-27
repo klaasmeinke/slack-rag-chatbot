@@ -6,10 +6,9 @@ from ratelimit import limits, sleep_and_retry
 
 class NotionPage(Doc):
 
-    def scrape_doc(self, client: Client):
+    def _scrape(self, client: Client):
         if self.is_scraped:
             return
-        self.last_scraped = datetime.now()
         block_id = self.url[-32:]
         self._depth = 0
         self.scrape_block(client, block_id)

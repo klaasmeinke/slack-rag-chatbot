@@ -1,3 +1,4 @@
+from datetime import datetime
 from slack_sdk import WebClient
 from smartsearch.retrievers.abstract import Retriever
 from typing import TYPE_CHECKING
@@ -17,7 +18,7 @@ class SlackRetriever(Retriever):
             scraping_kwargs={'client': self.client}
         )
 
-    def docs_generator(self):
+    def _fetch_docs(self):
         channels = self.client.conversations_list()["channels"]
 
         for channel in channels:
@@ -30,4 +31,17 @@ class SlackRetriever(Retriever):
             messages = self.client.conversations_history(channel=channel_id)['messages']
 
             for message in messages:
-                yield SlackConvo(message=message, channel_id=channel_id, channel_name=channel_name)
+                timestamp = float(message['ts'])
+                legible_timestamp = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+                microsecond_timestamp = int(timestamp * 10e6)
+
+                last_edited = datetime.utcfromtimestamp(timestamp)
+                if 'latest_reply' in message:
+                    last_edited = datetime.utcfromtimestamp(float(message['latest_reply']))
+
+                yield SlackConvo(
+                    header=f'Slack message in #{channel_name} from {message["user"]} at {legible_timestamp}',
+                    last_edited=last_edited,
+                    url=f'https://hadrian-group.slack.com/archives/{channel_id}/p{microsecond_timestamp}',
+                    body=message['text']
+                )

@@ -18,7 +18,7 @@ class NotionRetriever(Retriever):
             scraping_kwargs={'client': self.client}
         )
 
-    def docs_generator(self):
+    def _fetch_docs(self):
         # make api requests to get all pages and append them to self.docs
         has_more = True
         start_cursor = None
@@ -69,7 +69,7 @@ class NotionRetriever(Retriever):
                 title = id_to_title[parent_id] + '/' + title
                 parent_id = id_to_parent_id[parent_id]
 
-            header_items = [f'Title: {title}', f'Last Edited: {last_edited}']
+            header_items = [title, f'Last Edited: {last_edited}']
             formatted_properties = [
                 f'{prop_name}: {self._extract_content_from_properties(prop_info)}'
                 for prop_name, prop_info in result['properties'].items()
@@ -78,7 +78,7 @@ class NotionRetriever(Retriever):
             header_items += formatted_properties
             header = '\n'.join(header_items)
 
-            yield NotionPage(header=header, url=url, last_edited=last_edited)
+            yield NotionPage(body='', header=header, url=url, last_edited=last_edited)
 
     def _extract_content_from_properties(self, _prop_info: dict) -> str:
         """recursively unpack the properties dict and extract content"""

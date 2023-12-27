@@ -12,14 +12,19 @@ if TYPE_CHECKING:
 class Doc(ABC):
     def __init__(
             self,
+            body: str,
             header: str,
-            last_edited: datetime,
             url: str,
-            body: str = '',
-            last_scraped: datetime = datetime.min,
+            last_edited: datetime | str,
+            last_scraped: datetime | str = datetime.min,
     ):
         """used to store information from different sources."""
         body, header, url = body.strip(), header.strip(), url.strip()
+
+        if isinstance(last_edited, str):
+            last_edited = datetime.fromisoformat(last_edited)
+        if isinstance(last_scraped, str):
+            last_scraped = datetime.fromisoformat(last_scraped)
 
         self.body = body
         self.header = header
@@ -29,16 +34,16 @@ class Doc(ABC):
         self.embedding: List[float] | None = None
 
     def __str__(self):
-        return '\n'.join([self.url, self.header, self.body])
+        return '\n'.join([self.header, self.body])
 
     def scrape(self, **kwargs):
         if self.is_scraped:
             return
-        self.last_scraped = datetime.now()
-        self.scrape_doc(**kwargs)
+        self._scrape(**kwargs)
+        self.last_scraped = datetime.utcnow()
 
     @abstractmethod
-    def scrape_doc(self, **kwargs):
+    def _scrape(self, **kwargs):
         """scrape the doc and add info to self.body"""
 
     @property
@@ -116,14 +121,6 @@ class Doc(ABC):
             'last_scraped': self.last_scraped.isoformat(),
             'url': self.url,
         }
-
-    @classmethod
-    def load_from_dict(cls, data: Dict[str, str]) -> 'Doc':
-        typed_data = {
-            k: (datetime.fromisoformat(v) if k in ['last_edited', 'last_scraped'] else v)
-            for k, v in data.items()
-        }
-        return cls(**typed_data)  # type: ignore
 
     def update_from_doc(self, doc: 'Doc'):
         assert self.url == doc.url, "can only update from another doc that has the same url"

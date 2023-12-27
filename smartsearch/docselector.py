@@ -16,7 +16,7 @@ class DocSelector:
         self.config = config
         self.openai_client = OpenAI(api_key=config.OPENAI_API_KEY, organization=config.OPENAI_ORG)
         self.docs: List[Doc] = []
-        self.retrieve_docs()
+        self.fetch_doc_embeddings()
 
     def __call__(self, query: str) -> List[Doc]:
         query_embedding = self.fetch_embedding(query)
@@ -43,7 +43,7 @@ class DocSelector:
 
         return selected_docs
 
-    def retrieve_docs(self):
+    def load_docs_from_data(self):
         """read docs and embeddings from files. split the docs and assign embeddings to docs."""
         retriever = CombinedRetriever(config=self.config)
         self.docs = retriever.segments
@@ -54,15 +54,12 @@ class DocSelector:
             doc.set_embedding(embedding)
 
     def refresh_data(self):
-        """fetch and scrape docs."""
         retriever = CombinedRetriever(self.config)
-        retriever.fetch_docs()
         retriever.scrape_docs()
         self.fetch_doc_embeddings()
-        self.retrieve_docs()
 
     def fetch_doc_embeddings(self):
-        self.retrieve_docs()
+        self.load_docs_from_data()
         embeddings_cache = self.load_embeddings_cache()
         docs_without_embeddings = [doc for doc in self.docs if doc.content_hash not in embeddings_cache]
 

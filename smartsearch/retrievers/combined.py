@@ -13,8 +13,7 @@ if TYPE_CHECKING:
 class CombinedRetriever(Retriever):
     def __init__(self, config: 'Config'):
         self.config = config
-        self.retrievers = [SlackRetriever(config)]
-        # self.retrievers = [NotionRetriever(config), SlackRetriever(config)]
+        self.retrievers = [NotionRetriever(config), SlackRetriever(config)]
 
     @property
     def docs(self) -> Dict[str, 'Doc']:
@@ -30,9 +29,9 @@ class CombinedRetriever(Retriever):
         segments = [seg for doc in docs for seg in doc.get_segments(config=self.config)]
         return segments
 
-    def docs_generator(self):
+    def _fetch_docs(self):
         for retriever in self.retrievers:
-            for doc in retriever.docs_generator():
+            for doc in retriever._fetch_docs():
                 yield doc
 
     def scrape_docs(self):

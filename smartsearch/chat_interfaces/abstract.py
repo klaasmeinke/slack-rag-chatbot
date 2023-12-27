@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from datetime import datetime
 from smartsearch.docselector import DocSelector
 from openai import OpenAI
 from typing import Dict, List, TYPE_CHECKING
@@ -26,10 +27,15 @@ class ChatInterface(ABC):
 
     def get_response(self, prompt: str, user_id: str) -> str:
         self.history[user_id].append({'role': 'user', 'content': prompt})
-
         docs = self.doc_selector(prompt)
-        docs_string = '\n\n'.join([str(doc) for doc in docs])
-        system_prompt = self.system_prompt.replace('{docs}', docs_string)
+
+        doc_2_id = {doc.url: f'[Document {i}]' for i, doc in enumerate(docs)}
+        id_2_doc = {f'[Document {i}]': doc.url for i, doc in enumerate(docs)}
+
+        docs_string = '\n\n'.join([f'{doc_2_id[doc.url]}: {doc}' for doc in docs])
+        time_string = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        system_prompt = self.system_prompt.format(docs=docs_string, time=time_string)
+        print(system_prompt)
 
         completion = self.openai_client.chat.completions.create(
             model=self.config.model_chat,
@@ -37,6 +43,7 @@ class ChatInterface(ABC):
             messages=[{"role": "system", "content": system_prompt}] + self.history[user_id][-5:]
         )
         response = completion.choices[0].message.content
+        response.format(**id_2_doc)
 
         self.history[user_id].append({'role': 'assistant', 'content': response})
 
