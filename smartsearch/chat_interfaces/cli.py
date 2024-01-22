@@ -1,4 +1,4 @@
-from smartsearch.chat_interfaces.abstract import ChatInterface
+from smartsearch.chat_interfaces.abc import ChatInterface
 
 
 class CliInterface(ChatInterface):

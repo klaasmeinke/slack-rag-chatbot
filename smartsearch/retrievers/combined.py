@@ -1,7 +1,7 @@
 """This retriever combines the other retrievers into one."""
 
 from smartsearch.docs import Doc
-from smartsearch.retrievers.abstract import Retriever
+from smartsearch.retrievers.abc import Retriever
 from smartsearch.retrievers.notion import NotionRetriever
 from smartsearch.retrievers.slack import SlackRetriever
 from typing import Dict, List, TYPE_CHECKING

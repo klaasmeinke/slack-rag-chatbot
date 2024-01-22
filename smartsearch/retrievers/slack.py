@@ -1,6 +1,6 @@
 from datetime import datetime
 from slack_sdk import WebClient
-from smartsearch.retrievers.abstract import Retriever
+from smartsearch.retrievers.abc import Retriever
 from typing import TYPE_CHECKING
 from smartsearch.docs import SlackConvo
 

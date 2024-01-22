@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import json
-from smartsearch.docs.abstract import Doc
+from smartsearch.docs.abc import Doc
 import os
 from tqdm import tqdm
 from typing import Dict, Generator, List
