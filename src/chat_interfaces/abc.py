@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from smartsearch.docselector import DocSelector
+from src.docselector import DocSelector
 from openai import OpenAI
-from typing import Dict, List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from smartsearch.config import Config
+    from src.config import Config
 
 
 class ChatInterface(ABC):
@@ -14,7 +14,7 @@ class ChatInterface(ABC):
         self.doc_selector = DocSelector(config)
         self.openai_client = OpenAI(api_key=config.OPENAI_API_KEY, organization=config.OPENAI_ORG)
         self.config = config
-        self.history: Dict[str, List[Dict[str, str]]] = defaultdict(list)
+        self.history: dict[str, list[dict[str, str]]] = defaultdict(list)
         with open(config.file_system_prompt) as f:
             self.system_prompt = f.read()
 
@@ -51,7 +51,7 @@ class ChatInterface(ABC):
 
 
 def test(prompt: str):
-    from smartsearch.config import Config
+    from src.config import Config
     import cProfile
     import pstats
 

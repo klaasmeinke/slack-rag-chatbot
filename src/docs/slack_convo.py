@@ -1,5 +1,5 @@
 from datetime import datetime
-from smartsearch.docs import Doc
+from src.docs import Doc
 from slack_sdk import WebClient
 
 
@@ -41,7 +41,7 @@ def test():
     print(convo.is_thread)
     print(convo)
     print()
-    from smartsearch.config import Config
+    from src.config import Config
     config = Config()
     client = WebClient(token=config.SLACK_TOKEN)
     convo.scrape(client=client)
@@ -49,4 +49,4 @@ def test():
 
 
 if __name__ == "__main__":
-     test()
+    test()

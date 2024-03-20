@@ -1,9 +1,14 @@
-from smartsearch.chat_interfaces import CliInterface, SlackInterface
 import argparse
 import os
 from typing import TYPE_CHECKING
+
+from dotenv import load_dotenv
+
+from src.chat_interfaces import CliInterface, SlackInterface
 if TYPE_CHECKING:
-    from smartsearch.chat_interfaces import Interface
+    from src.chat_interfaces import Interface
+
+load_dotenv()  # take environment variables from .env.
 
 
 class Config:
@@ -29,8 +34,10 @@ class Config:
         self.port = 8000
         self.openai_token_limit = 2000
 
-        # override defaults with env variables and cli args
+        # override attributes with env variables
         self.load_env_config()
+
+        # override attributes with cli variables
         self.load_cli_args()
 
         # validate that all variables are set
@@ -82,7 +89,7 @@ class Config:
             'OPENAI_ORG': 'Organization ID for OpenAI.',
             'OPENAI_API_KEY': 'API key for OpenAI services.',
             'SLACK_TOKEN': 'Token for Slack bot integration.',
-            'SLACK_SIGNING_SECRET': 'Signing secret for Slack smartsearch.',
+            'SLACK_SIGNING_SECRET': 'Signing secret for Slack src.',
             'data_refresh_minutes': 'Interval in minutes for data refresh.',
             'doc_token_overlap': 'Number of overlapping tokens in retriever documents.',
             'doc_token_limit': 'Limit for the number of tokens in one retriever document.',

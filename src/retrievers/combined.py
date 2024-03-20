@@ -1,13 +1,13 @@
 """This retriever combines the other retrievers into one."""
 
-from smartsearch.docs import Doc
-from smartsearch.retrievers.abc import Retriever
-from smartsearch.retrievers.notion import NotionRetriever
-from smartsearch.retrievers.slack import SlackRetriever
-from typing import Dict, List, TYPE_CHECKING
+from src.docs import Doc
+from src.retrievers.abc import Retriever
+from src.retrievers.notion import NotionRetriever
+from src.retrievers.slack import SlackRetriever
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from smartsearch.config import Config
+    from src.config import Config
 
 
 class CombinedRetriever(Retriever):
@@ -16,17 +16,17 @@ class CombinedRetriever(Retriever):
         self.retrievers = [NotionRetriever(config), SlackRetriever(config)]
 
     @property
-    def docs(self) -> Dict[str, 'Doc']:
+    def docs(self) -> dict[str, 'Doc']:
         docs = dict()
         for retriever in self.retrievers:
             docs.update(retriever.docs)
         return docs
 
     @property
-    def segments(self) -> List['Doc']:
+    def segments(self) -> list['Doc']:
         """returns docs that are split into smaller segments"""
         docs = list(self.docs.values())
-        segments = [seg for doc in docs for seg in doc.get_segments(config=self.config)]
+        segments = [seg for doc in docs for seg in doc.split_into_segments(config=self.config)]
         return segments
 
     def _fetch_docs(self):

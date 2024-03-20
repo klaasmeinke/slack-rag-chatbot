@@ -22,7 +22,7 @@ oauth_config:
       - im:write
 settings:
   event_subscriptions:
-    request_url: https://put-your-domain-here/slack/events
+    request_url: https://your-domain-here/slack/events
     bot_events:
       - message.im
   org_deploy_enabled: false

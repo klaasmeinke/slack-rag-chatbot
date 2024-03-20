@@ -1,5 +1,5 @@
-from smartsearch.docs import Doc
-from smartsearch.retrievers import CombinedRetriever
+from src.docs import Doc
+from src.retrievers import CombinedRetriever
 import json
 import numpy as np
 from tqdm import tqdm
@@ -8,7 +8,7 @@ from openai import OpenAI
 import os
 
 if TYPE_CHECKING:
-    from smartsearch.config import Config
+    from src.config import Config
 
 
 class DocSelector:
@@ -89,7 +89,7 @@ class DocSelector:
 
 
 def test():
-    from smartsearch.config import Config
+    from src.config import Config
     config = Config()
 
     selector = DocSelector(config)

@@ -1,46 +1,52 @@
-# hadrian-gpt
+# Slack Notion RAG Integration
+
+Search through your slack and notion knowledge bases using a natural language interface.
+
+This repository integrates with Notion's and Slack's APIs to pull slack messages and notion pages.
+The chatbot has access to these document to answer questions using RAG (retrieval-augment-generation).
+
+The chatbot can be accessed from two interfaces: the CLI interface or from slack.
+
+# Set-Up
+
+### 1. Install the Repo
+
+1. Install Python >= 3.8.
+2. Clone this repository.
+3. Install pipenv: `pip install pipenv`
+4. Install required packages from Pipfile: `pipenv install` from project root
+5. Copy the `example.env` file and call the new file `.env`
+
+Alternatively, you can skip installing pipenv and install the packages from requirements.txt.
+Run `python -m src` to launch the app.
 
 
+### 2. Create a Notion Integration
 
-# Slack Integration
-# SlackBot
+1. Create a new Notion integration: <https://www.notion.so/my-integrations/>
+2. Add the Notion API key to the `.env` file
 
-## Commands
-pipenv run run-slack-bot -  Start the slackbot
-pipenv run build-docker - Build the docker to deploy the bot
+### 3. Add OpenAI Keys
 
-### Install dependencies
-pipenv install
+1. Create OpenAI API Keys at <https://platform.openai.com>
+2. Add the API org and key to the `.env` file
 
-### Generate updated requirement file
-pipenv run pip freeze > requirements.txt
+### 4. Create a Slack App
 
+1. Create a new Slack App.
+2. Use the app manifest from the file `resources/slack_app_manifest.yaml` for the app configuration.
+3. Add the app token and signing secret to the `.env` file
 
-## Debugging
+To chat with the app from slack you should also follow these steps:
 
-```curl -X POST http://localhost:5000/slack/events \
--H "Content-Type: application/json" \
--d '{
-    "token": "your-slack-verification-token",
-    "team_id": "T025818FKRP",
-    "team_domain": "example",
-    "channel_id": "C2147483705",
-    "channel_name": "test",
-    "user_id": "U028Q807PEZ",
-    "user_name": "Steve",
-    "command": "/askbot",
-    "text": "Your message here",
-    "response_url": "http://localhost:5000/response",
-    "trigger_id": "13345224609.738474920.8088930838d88f008e0"
-}'```
+1. Change `self.interface` in `src/config.py` to `'slack'`.
+2. Install ngrok to expose a public url: `brew install ngrok/ngrok/ngrok`
+3. Start a local tunnel to expose the chatbot: `ngrok http 8000`
+4. Replace 'your-domain-here' with the ngrok url in the app manifest.
 
-Update the token and response_url in the above example
+### 5. Run the App
 
-### Requirements
+To run the app you can run `pipenv run main` or `python -m src` from the project root.
 
-To be able to let slack access the local running app you could use NGROK to setup a proxy.
-
-```brew install ngrok/ngrok/ngrok```
-
-To start a local tunnel to let Slack connect to your local machine
-```ngrok http 8000```
+### Changing the Config
+To change the configuration of the chatbot, change the attributes of the Config class in `src/config.py`.

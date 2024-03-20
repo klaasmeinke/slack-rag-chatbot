@@ -1,6 +1,6 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
-from smartsearch.config import Config
+from src.config import Config
 
 config = Config()
 interface = config.get_interface()

@@ -1,1 +1,0 @@
-from smartsearch.retrievers.combined import CombinedRetriever

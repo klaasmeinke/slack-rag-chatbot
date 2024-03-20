@@ -7,10 +7,11 @@ name = "pypi"
 apscheduler = "==3.10.4"
 fastapi = "==0.105.0"
 pydantic = "==2.5.2"
+python-dotenv = "==1.0.1"
 notion-client = "==2.1.0"
 openai = "==1.3.5"
 tiktoken = "==0.5.1"
-ratelimit = "*"
+ratelimit = "==2.2.1"
 slack-bolt = "==1.18.1"
 tqdm = "==4.66.1"
 numpy = "==1.26.2"
@@ -22,8 +23,8 @@ uvicorn = "==0.24.0.post1"
 python_version = "3.11"
 
 [scripts]
-interface = 'python -m smartsearch.chat_interfaces.interface'
-main = 'python -m smartsearch'
-notion = 'python -m smartsearch.retrievers.notion'
-docselector = 'python -m smartsearch.docselector'
-slack = 'python -m smartsearch.retrievers.slack'
+interface = 'python -m src.chat_interfaces.interface'
+main = 'python -m src'
+notion = 'python -m src.retrievers.notion'
+docselector = 'python -m src.docselector'
+slack = 'python -m src.retrievers.slack'

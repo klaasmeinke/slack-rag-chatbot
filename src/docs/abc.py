@@ -3,10 +3,10 @@ from datetime import datetime
 from functools import cached_property
 import hashlib
 import tiktoken
-from typing import Dict, List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from smartsearch.config import Config
+    from src.config import Config
 
 
 class Doc(ABC):
@@ -31,7 +31,7 @@ class Doc(ABC):
         self.last_edited = last_edited
         self.last_scraped = last_scraped
         self.url = url
-        self.embedding: List[float] | None = None
+        self.embedding: list[float] | None = None
 
     def __str__(self):
         return '\n'.join([self.header, self.body])
@@ -58,7 +58,7 @@ class Doc(ABC):
     def token_count(self, model: str):
         return self.count_tokens(str(self), model)
 
-    def get_segments(self, config: 'Config') -> List['Doc']:
+    def split_into_segments(self, config: 'Config') -> list['Doc']:
         if not self.body:
             return []  # add logging here
 
@@ -105,7 +105,7 @@ class Doc(ABC):
             for seg in segments
         ]
 
-    def set_embedding(self, embedding: List[float]):
+    def set_embedding(self, embedding: list[float]):
         self.embedding = embedding
 
     @cached_property
@@ -113,7 +113,7 @@ class Doc(ABC):
         content = '\n'.join([self.header, self.body])
         return hashlib.sha256(content.encode()).hexdigest()
 
-    def save_to_dict(self) -> Dict[str, str]:
+    def save_to_dict(self) -> dict[str, str]:
         return {
             'body': self.body,
             'header': self.header,

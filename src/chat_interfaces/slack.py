@@ -3,7 +3,7 @@ from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler
 import uvicorn
 
-from smartsearch.chat_interfaces.abc import ChatInterface
+from src.chat_interfaces.abc import ChatInterface
 
 
 class SlackInterface(ChatInterface):

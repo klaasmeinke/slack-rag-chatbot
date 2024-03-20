@@ -1,11 +1,11 @@
 from datetime import datetime
 from slack_sdk import WebClient
-from smartsearch.retrievers.abc import Retriever
+from src.retrievers.abc import Retriever
 from typing import TYPE_CHECKING
-from smartsearch.docs import SlackConvo
+from src.docs import SlackConvo
 
 if TYPE_CHECKING:
-    from smartsearch.config import Config
+    from src.config import Config
 
 
 class SlackRetriever(Retriever):

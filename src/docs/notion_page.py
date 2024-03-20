@@ -1,5 +1,4 @@
-from datetime import datetime
-from smartsearch.docs.abc import Doc
+from src.docs.abc import Doc
 from notion_client import Client
 from ratelimit import limits, sleep_and_retry
 

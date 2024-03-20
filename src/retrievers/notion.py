@@ -1,11 +1,11 @@
 from datetime import datetime
 from notion_client import Client
-from smartsearch.retrievers.abc import Retriever
+from src.retrievers.abc import Retriever
 from typing import TYPE_CHECKING
-from smartsearch.docs import NotionPage
+from src.docs import NotionPage
 
 if TYPE_CHECKING:
-    from smartsearch.config import Config
+    from src.config import Config
 
 
 class NotionRetriever(Retriever):

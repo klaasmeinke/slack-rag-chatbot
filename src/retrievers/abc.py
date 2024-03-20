@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 import json
-from smartsearch.docs.abc import Doc
+from src.docs.abc import Doc
 import os
 from tqdm import tqdm
-from typing import Dict, Generator, List
+from typing import Generator
 
 
 class Retriever(ABC):
@@ -17,7 +17,7 @@ class Retriever(ABC):
         self.doc_type = doc_type
         self.scraping_kwargs = scraping_kwargs if scraping_kwargs else dict()
 
-        self.docs: Dict[str, doc_type] = dict()
+        self.docs: dict[str, doc_type] = dict()
         try:
             self.load_from_data()
         except AssertionError as e:
@@ -57,7 +57,7 @@ class Retriever(ABC):
     def load_from_data(self):
         assert os.path.exists(self.data_file), f'{self.data_file} file does not exist.'
         with open(self.data_file) as json_file:
-            data: List[Dict[str, str]] = json.load(json_file)
+            data: list[dict[str, str]] = json.load(json_file)
         for doc_data in data:
             doc = self.doc_type(**doc_data)
             self.add_doc(doc)
