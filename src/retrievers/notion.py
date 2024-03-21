@@ -68,6 +68,7 @@ class NotionRetriever(Retriever):
             while parent_id in id_to_parent_id:
                 title = id_to_title[parent_id] + '/' + title
                 parent_id = id_to_parent_id[parent_id]
+            title = 'Notion Page: ' + title
 
             header_items = [title, f'Last Edited: {last_edited}']
             formatted_properties = [

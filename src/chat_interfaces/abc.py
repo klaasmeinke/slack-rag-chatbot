@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from src.docselector import DocSelector
 from openai import OpenAI
+import re
+from src.docselector import DocSelector
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -29,8 +30,8 @@ class ChatInterface(ABC):
         self.history[user_id].append({'role': 'user', 'content': prompt})
         docs = self.doc_selector(prompt)
 
-        doc_2_id = {doc.url: f'[Document {i}]' for i, doc in enumerate(docs)}
-        id_2_doc = {f'[Document {i}]': doc.url for i, doc in enumerate(docs)}
+        doc_2_id = {doc.url: f'(Document {i})' for i, doc in enumerate(docs)}
+        id_2_doc = {f'Document {i}': doc.url for i, doc in enumerate(docs)}
 
         docs_string = '\n\n'.join([f'{doc_2_id[doc.url]}: {doc}' for doc in docs])
         time_string = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -43,7 +44,10 @@ class ChatInterface(ABC):
             messages=[{"role": "system", "content": system_prompt}] + self.history[user_id][-5:]
         )
         response = completion.choices[0].message.content
-        response.format(**id_2_doc)
+
+        response = re.sub(r'<(Document \w+)\|(.*?)>', r'<{\1}|\2>', response)
+        response = response.format(**id_2_doc)
+        print(response)
 
         self.history[user_id].append({'role': 'assistant', 'content': response})
 
