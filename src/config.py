@@ -23,7 +23,7 @@ class Config:
         self.data_refresh_minutes = 60
         self.doc_token_overlap = 50
         self.doc_token_limit = 500
-        self.interface = 'cli'
+        self.interface = 'slack'
         self.file_embeddings = 'data/embeddings.json'
         self.file_notion = 'data/notion.json'
         self.file_slack = 'data/slack.json'

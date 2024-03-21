@@ -23,8 +23,5 @@ uvicorn = "==0.24.0.post1"
 python_version = "3.11"
 
 [scripts]
-interface = 'python -m src.chat_interfaces.interface'
 main = 'python -m src'
-notion = 'python -m src.retrievers.notion'
-docselector = 'python -m src.docselector'
-slack = 'python -m src.retrievers.slack'
+# run pipenv requirements > requirements.txt to regenerate requirmenets.txt
