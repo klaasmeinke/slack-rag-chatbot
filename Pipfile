@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 apscheduler = "==3.10.4"
-fastapi = "==0.105.0"
+fastapi = "==0.109.1"
 pydantic = "==2.5.2"
 python-dotenv = "==1.0.1"
 notion-client = "==2.1.0"
