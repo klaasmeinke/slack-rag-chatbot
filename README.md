@@ -64,5 +64,4 @@ To change the configuration of the chatbot, change the attributes of the Config 
 - Dynamically set which integrations to use from environment variables.
 - Improve Notion page retrieval. Not all Notion block types are supported now.
 - Improve Slack conversation retrieval. Currently, each message is a separate document (including replies).
-- Add integrations with more messaging apps such as MS Teams.
 - Add integrations with more knowledge bases (e.g. Github, Hubspot).
