@@ -15,7 +15,7 @@ The chatbot can be accessed from two interfaces: the CLI or Slack.
 2. Clone this repository.
 3. Install pipenv: `pip install pipenv`
 4. Install required packages from Pipfile: `pipenv install` from project root
-5. Copy the `example.env` file and call the new file `.env`
+5. Copy the `example.env` file and call the new file `.env`. Add your keys to this file.
 
 Alternatively, you can skip installing pipenv and install the packages from requirements.txt.
 Run `python -m src` to launch the app.
