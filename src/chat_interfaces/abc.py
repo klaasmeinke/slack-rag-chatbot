@@ -47,7 +47,6 @@ class ChatInterface(ABC):
 
         response = re.sub(r'<(Document \w+)\|(.*?)>', r'<{\1}|\2>', response)
         response = response.format(**id_2_doc)
-        print(response)
 
         self.history[user_id].append({'role': 'assistant', 'content': response})
 
