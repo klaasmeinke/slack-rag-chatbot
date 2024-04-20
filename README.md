@@ -15,7 +15,7 @@ The chatbot can be accessed from two interfaces: the CLI or Slack.
 2. Clone this repository.
 3. Install pipenv: `pip install pipenv`
 4. Install required packages from Pipfile: `pipenv install` from project root
-5. Copy the `example.env` file and call the new file `.env`
+5. Copy the `example.env` file and call the new file `.env`. Add your keys to this file.
 
 Alternatively, you can skip installing pipenv and install the packages from requirements.txt.
 Run `python -m src` to launch the app.
@@ -64,5 +64,4 @@ To change the configuration of the chatbot, change the attributes of the Config 
 - Dynamically set which integrations to use from environment variables.
 - Improve Notion page retrieval. Not all Notion block types are supported now.
 - Improve Slack conversation retrieval. Currently, each message is a separate document (including replies).
-- Add integrations with more messaging apps such as MS Teams.
 - Add integrations with more knowledge bases (e.g. Github, Hubspot).
