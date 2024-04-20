@@ -12,6 +12,7 @@ class SlackRetriever(Retriever):
 
     def __init__(self, config: 'Config'):
         self.client = WebClient(token=config.SLACK_TOKEN)
+        self.workspace_url = self.client.auth_test()['url']
         super().__init__(
             data_file=config.file_slack,
             doc_type=SlackConvo,
@@ -42,6 +43,6 @@ class SlackRetriever(Retriever):
                 yield SlackConvo(
                     header=f'Slack message in #{channel_name} from {message["user"]} at {legible_timestamp}',
                     last_edited=last_edited,
-                    url=f'https://hadrian-group.slack.com/archives/{channel_id}/p{microsecond_timestamp}',
+                    url=f'{self.workspace_url}.slack.com/archives/{channel_id}/p{microsecond_timestamp}',
                     body=message['text']
                 )
