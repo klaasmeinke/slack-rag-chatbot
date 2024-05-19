@@ -1,4 +1,5 @@
 import hashlib
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from functools import cached_property
@@ -65,7 +66,8 @@ class Doc(ABC):
 
     def split_into_segments(self, config: 'Config') -> list['Doc']:
         if not self.body:
-            return []  # add logging here
+            logging.warning(f"Cannot create segments for {self.url}. Body is empty.")
+            return []
 
         body_tokens = self.count_tokens(self.body, config.model_chat)
         header_tokens = self.count_tokens(self.header, config.model_chat)
@@ -73,21 +75,17 @@ class Doc(ABC):
         total_tokens = sum([body_tokens, header_tokens, url_tokens])
 
         if total_tokens <= config.doc_token_limit:
-            doc = self.__class__(
-                body=self.body,
-                header=self.header,
-                last_edited=self.last_edited,
-                last_scraped=self.last_scraped,
-                url=self.url
-            )
-            return [doc]
+            return [self]
 
         encoding = tiktoken.encoding_for_model(config.model_chat)
         body_tokens = encoding.encode(self.body)
         max_body_tokens = config.doc_token_limit - header_tokens - url_tokens
 
-        if max_body_tokens < 50:
-            return []  # add logging here
+        if max_body_tokens < 20:
+            logging.warning(f"Cannot create token segments for {self.url}. Has {header_tokens} header tokens, "
+                            f"{url_tokens} url tokens, and the limit is set to {config.doc_token_limit}."
+                            "Consider doc_token_limit in the config.")
+            return []  # TODO: add logging here
 
         segments = []
         start_idx, end_idx = 0, 0
@@ -96,10 +94,9 @@ class Doc(ABC):
             segments.append(encoding.decode(body_tokens[start_idx:end_idx]))
             start_idx += max_body_tokens - config.doc_token_overlap
 
-        segments = ['...' + seg for i, seg in enumerate(segments) if i != 0]
-        segments = [seg + '...' for i, seg in enumerate(segments) if i + 1 != len(segments)]
-
-        return [
+        segments = [seg if i == 0 else '...' + seg for i, seg in enumerate(segments)]
+        segments = [seg if i + 1 == len(segments) else seg + '...' for i, seg in enumerate(segments)]
+        segments = [
             self.__class__(
                 body=seg,
                 header=self.header,
@@ -109,6 +106,8 @@ class Doc(ABC):
             )
             for seg in segments
         ]
+
+        return segments
 
     def set_embedding(self, embedding: list[float]):
         self.embedding = embedding
