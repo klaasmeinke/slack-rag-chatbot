@@ -1,4 +1,4 @@
-from src.chat_interfaces.abc import ChatInterface
+from src.chat_interfaces.type import ChatInterface
 
 
 class CliInterface(ChatInterface):

@@ -1,6 +1,8 @@
 from datetime import datetime
-from src.docs import Doc
+
 from slack_sdk import WebClient
+
+from src.docs import Doc
 
 
 class SlackConvo(Doc):

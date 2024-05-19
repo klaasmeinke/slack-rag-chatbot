@@ -1,10 +1,12 @@
+import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from openai import OpenAI
-import re
-from src.docselector import DocSelector
 from typing import TYPE_CHECKING
+
+from openai import OpenAI
+
+from src.docselector import DocSelector
 
 if TYPE_CHECKING:
     from src.config import Config

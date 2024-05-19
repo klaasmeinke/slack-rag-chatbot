@@ -1,9 +1,9 @@
+import uvicorn
 from fastapi import FastAPI, Request
 from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler
-import uvicorn
 
-from src.chat_interfaces.abc import ChatInterface
+from src.chat_interfaces.type import ChatInterface
 
 
 class SlackInterface(ChatInterface):

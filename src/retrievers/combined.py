@@ -1,10 +1,11 @@
 """This retriever combines the other retrievers into one."""
 
+from typing import TYPE_CHECKING
+
 from src.docs import Doc
-from src.retrievers.abc import Retriever
 from src.retrievers.notion import NotionRetriever
 from src.retrievers.slack import SlackRetriever
-from typing import TYPE_CHECKING
+from src.retrievers.type import Retriever
 
 if TYPE_CHECKING:
     from src.config import Config
@@ -25,8 +26,9 @@ class CombinedRetriever(Retriever):
     @property
     def segments(self) -> list['Doc']:
         """returns docs that are split into smaller segments"""
-        docs = list(self.docs.values())
-        segments = [seg for doc in docs for seg in doc.split_into_segments(config=self.config)]
+        segments = []
+        for retriever in self.retrievers:
+            segments += retriever.segments
         return segments
 
     def _fetch_docs(self):
@@ -38,10 +40,10 @@ class CombinedRetriever(Retriever):
         for retriever in self.retrievers:
             retriever.scrape_docs()
 
-    def save_data(self):
+    def cache_data(self):
         for retriever in self.retrievers:
-            retriever.save_data()
+            retriever.cache_data()
 
-    def load_from_data(self):
+    def load_from_cache(self):
         for retriever in self.retrievers:
-            retriever.load_from_data()
+            retriever.load_from_cache()

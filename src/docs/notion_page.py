@@ -1,6 +1,7 @@
-from src.docs.abc import Doc
 from notion_client import Client
 from ratelimit import limits, sleep_and_retry
+
+from src.docs.type import Doc
 
 
 class NotionPage(Doc):

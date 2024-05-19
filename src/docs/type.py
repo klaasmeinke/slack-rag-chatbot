@@ -1,9 +1,10 @@
+import hashlib
 from abc import ABC, abstractmethod
 from datetime import datetime
 from functools import cached_property
-import hashlib
-import tiktoken
 from typing import TYPE_CHECKING
+
+import tiktoken
 
 if TYPE_CHECKING:
     from src.config import Config
@@ -35,6 +36,10 @@ class Doc(ABC):
 
     def __str__(self):
         return '\n'.join([self.header, self.body])
+
+    @cached_property
+    def hash(self) -> str:
+        return hashlib.md5(str(self).encode()).hexdigest()
 
     def scrape(self, **kwargs):
         if self.is_scraped:
@@ -107,11 +112,6 @@ class Doc(ABC):
 
     def set_embedding(self, embedding: list[float]):
         self.embedding = embedding
-
-    @cached_property
-    def content_hash(self):
-        content = '\n'.join([self.header, self.body])
-        return hashlib.sha256(content.encode()).hexdigest()
 
     def save_to_dict(self) -> dict[str, str]:
         return {

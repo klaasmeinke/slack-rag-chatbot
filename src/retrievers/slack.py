@@ -1,8 +1,11 @@
 from datetime import datetime
-from slack_sdk import WebClient
-from src.retrievers.abc import Retriever
+from functools import cached_property
 from typing import TYPE_CHECKING
+
+from slack_sdk import WebClient
+
 from src.docs import SlackConvo
+from src.retrievers.type import Retriever
 
 if TYPE_CHECKING:
     from src.config import Config
@@ -12,12 +15,16 @@ class SlackRetriever(Retriever):
 
     def __init__(self, config: 'Config'):
         self.client = WebClient(token=config.SLACK_TOKEN)
-        self.workspace_url = self.client.auth_test()['url']
         super().__init__(
-            data_file=config.file_slack,
+            cache_file=config.file_slack,
+            config=config,
             doc_type=SlackConvo,
             scraping_kwargs={'client': self.client}
         )
+
+    @cached_property
+    def workspace_url(self):
+        return self.client.auth_test()['url']
 
     def _fetch_docs(self):
         channels = self.client.conversations_list()["channels"]
@@ -43,6 +50,6 @@ class SlackRetriever(Retriever):
                 yield SlackConvo(
                     header=f'Slack message in #{channel_name} from {message["user"]} at {legible_timestamp}',
                     last_edited=last_edited,
-                    url=f'{self.workspace_url}.slack.com/archives/{channel_id}/p{microsecond_timestamp}',
+                    url=f'{self.workspace_url}archives/{channel_id}/p{microsecond_timestamp}',
                     body=message['text']
                 )

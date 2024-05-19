@@ -1,8 +1,10 @@
 from datetime import datetime
-from notion_client import Client
-from src.retrievers.abc import Retriever
 from typing import TYPE_CHECKING
+
+from notion_client import Client
+
 from src.docs import NotionPage
+from src.retrievers.type import Retriever
 
 if TYPE_CHECKING:
     from src.config import Config
@@ -13,7 +15,8 @@ class NotionRetriever(Retriever):
     def __init__(self, config: 'Config'):
         self.client = Client(auth=config.NOTION_API_KEY)
         super().__init__(
-            data_file=config.file_notion,
+            cache_file=config.file_notion,
+            config=config,
             doc_type=NotionPage,
             scraping_kwargs={'client': self.client}
         )
@@ -102,3 +105,14 @@ class NotionRetriever(Retriever):
             _child = ' '.join(self._extract_content_from_properties(x) for x in _child)
 
         return str(_child).strip()
+
+
+def test():
+    from src.config import Config
+    config = Config()
+    retriever = NotionRetriever(config)
+    print(retriever.segments)
+
+
+if __name__ == "__main__":
+    test()

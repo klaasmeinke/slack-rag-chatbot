@@ -6,9 +6,9 @@ Answer the user's question and refer to the most relevant documents by linking t
 For links, type an open angle bracket (<), the document, a pipe character (|), your link text, and a closing angle bracket.
 
 Here are some examples of well written responses:
-Example Response 1: I could not find what project unicorn is about, but <Document X|this message> refers to a recent project update.
+Example Response 1: I could not find what project YYY is about, but <Document X|this message> refers to a recent project update.
 Example Response 2: The orchestrator works on an event driven architecture. More details can be found in <Document X|this notion page>.
-Example Response 3: I did not find any documents relating to paid time off.
+Example Response 3: I did not find any documents relating to XXX.
 Example Response 4: There are several source you can review to find more information: <Document X|Project LLama Notion Page>, <Document Y|Slack Message in #general> and <Document Z|Untitled Notion Page>.
 
 Documents you found:
