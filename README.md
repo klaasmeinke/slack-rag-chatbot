@@ -32,17 +32,15 @@ Run `python -m src` to launch the app.
 
 ### 4. Create a Slack App
 
+To chat with the app from Slack (rather than from the CLI) you should also follow these steps:
 1. Create a new Slack App: <https://api.slack.com/apps>.
 2. Use the app manifest from the file `resources/slack_app_manifest.yaml`.
 3. Add the app token and signing secret to the `.env` file
-
-To chat with the app from Slack (rather than from the CLI) you should also follow these steps:
-
-1. Change `self.interface` in `src/config.py` to `'slack'`.
-2. Install ngrok to expose a public url: `brew install ngrok/ngrok/ngrok`
-3. Start a local tunnel to expose the chatbot: `ngrok http 8000`
-4. Run the app (see below).
-5. Replace 'your-domain-here' with the ngrok url. You do this in the app manifest of the "Event Subscriptions" tab.
+4. Change `self.interface` in `src/config.py` to `'slack'`.
+5. Install ngrok to expose a public url: `brew install ngrok/ngrok/ngrok`
+6. Start a local tunnel to expose the chatbot: `ngrok http 8000`
+7. Run the app (see below).
+8. Replace 'your-domain-here' with the ngrok url. You do this in the app manifest of the "Event Subscriptions" tab.
 
 ### 5. Run the App
 
