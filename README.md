@@ -1,6 +1,6 @@
 # Slack RAG Chatbot
 
-Search through your Slack Pages and Notion Pages using a natural language interface.
+Search through your Slack conversations and Notion pages using a natural language interface.
 
 https://github.com/klaasmeinke/slack-rag-chatbot/assets/48212135/2bd21d6e-6a8d-4093-9dd7-619243d2ac0b
 
