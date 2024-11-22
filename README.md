@@ -2,7 +2,7 @@
 
 Search through your Slack conversations and Notion pages using a natural language interface.
 
-https://github.com/klaasmeinke/slack-rag-chatbot/assets/48212135/2bd21d6e-6a8d-4093-9dd7-619243d2ac0b
+![rag-chatbot](https://github.com/user-attachments/assets/5ffaae9e-c6c1-4bc2-abdd-464c1186617e)
 
 This repository integrates with Notion's and Slack's APIs to pull Slack messages and Notion pages.
 The chatbot has access to these documents and answers questions using RAG (retrieval-augment-generation).
